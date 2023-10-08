@@ -1,0 +1,14 @@
+
+<PROJECT>:=jili
+<CONFIG>:=visionp6_ao
+<TARGET>:=Debug
+<FEEDBACK>:=InstruMode: None
+
+<TIE_COMPILE>:=
+<PRE_FINAL>:=
+<OBJS>:=
+<MINSIZE_LINK>:=
+<FINAL>:=
+
+<COMPILE_START>
+<COMPILE_END>
