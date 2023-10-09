@@ -11,7 +11,7 @@
 #include <algorithm>
 
 #include "lidar_data_common.h"
-#include "lidar_inference.h"
+//#include "lidar_inference.h"
 #include "post_lidar_process.h"
 
 #include "base.h"
@@ -197,13 +197,13 @@ namespace lidar_perception
 
   void LidarProcess::Init(const std::string &model_path)
   {
-    lidar_inference_ = std::make_shared<LidarInference>();
-    lidar_inference_->Init(model_path, "front_lidar", INFER_USER_ADDR);
-    post_lidar_process_ = std::make_shared<PostLidarProcess>();
-    post_lidar_process_->Init();
+//    lidar_inference_ = std::make_shared<LidarInference>();
+//    lidar_inference_->Init(model_path, "front_lidar", INFER_USER_ADDR);
+//    post_lidar_process_ = std::make_shared<PostLidarProcess>();
+//    post_lidar_process_->Init();
     // int_buf_. = std::make_shared<>(new char[10*400*352]);
-    int_buf_.reset(new signed char[16 * 400 * 352]);
-    anchors = std::move(test_anchors());
+//    int_buf_.reset(new signed char[16 * 400 * 352]);
+//    anchors = std::move(test_anchors());
     piv = std::make_shared<PointsInVoxels>();
     piv->Init();
   }
@@ -240,130 +240,130 @@ namespace lidar_perception
     piv->Reset();
 
     float *p_npy_data_temp = &batch_image[0];
-    signed char *p_npy_data = int_buf_.get();
-    // NCHW-->NHWC, CH:10-->16 padding
-    {
-      int s1 = input_h_*input_w_;
-      int s2 = input_w_ * input_c_;
-      float* offset_l1_w = 0;
-      signed char* offset_l1_c = 0;
-      float* offset_l2_w = 0;
-      signed char* offset_l2_c = 0;
-    
-      #pragma omp parallel for
-      for (int i = 0; i < input_h_; i++)
-      {
-        offset_l1_w = i * input_w_ + p_npy_data_temp;
-        offset_l1_c = p_npy_data + i * s2;
-        for (int m = 0; m < input_w_; m++)
-        {
-          offset_l2_w = offset_l1_w + m;
-          offset_l2_c = m * input_c_ + offset_l1_c;
-          for (int c = 0; c < pre_output_c_; c++)
-          {
-            float tmp = *(c * s1 + offset_l2_w) * 2.0;
-            tmp = std::floor(tmp);
-            tmp = MIN(MAX(tmp,-128),127);
-            *(offset_l2_c + c) = (signed char)tmp;
-          }
-        }
-      }
-    }
-
-    DataBuffer infer_img_tmp = {0};
-    infer_img_tmp.start = int_buf_.get();
-    infer_img_tmp.length = 16 * 400 * 352;
-
-    std::vector<int> keep_ids;
-    keep_ids.reserve(16);
-    std::vector<float> scores;
-    scores.reserve(16);
-    std::vector<int> cls_argmax;
-    cls_argmax.reserve(16);
-    std::vector<int> dir_cls_argmax;
-    dir_cls_argmax.reserve(16);
-    std::vector<std::vector<float>> boxes;
-    boxes.reserve(16);
-    lidar_inference_->Update(infer_img_tmp, nms_score_threshold, keep_ids, scores, cls_argmax, dir_cls_argmax, boxes);
-
-    if (!boxes.size())
-    {
-      return;
-    }
-
-    // 后处理
-    PostRet post_ret = std::move(post_process_1(boxes, scores, cls_argmax, dir_cls_argmax, keep_ids, anchors));
-
-    cout << "output Rst:" << endl;
-    std::cout << "post_ret.boxes.rows():" << post_ret.boxes.rows() << std::endl;
-    std::cout << "post_ret.boxes.cols():" << post_ret.boxes.cols() << std::endl;
-    std::cout << "post_ret.scores.rows():" << post_ret.scores.rows() << std::endl;
-    std::cout << "post_ret.scores.cols():" << post_ret.scores.cols() << std::endl;
-    std::cout << "post_ret.labels.rows():" << post_ret.labels.rows() << std::endl;
-    std::cout << "post_ret.labels.cols():" << post_ret.labels.cols() << std::endl;
-
-    cout << post_ret.boxes << endl
-         << endl;
-    cout << post_ret.scores << endl
-         << endl;
-    cout << post_ret.labels << endl
-         << endl;
-
-
-    std::vector<LidarPostObstaclePre> lidar_v_src;
-    std::vector<LidarPostObstaclePre> lidar_p_src;
-    std::vector<LidarPostObstacleOut> lidar_v_out;
-    std::vector<LidarPostObstacleOut> lidar_p_out;
-
-    for (int i = 0; i < post_ret.boxes.rows(); i++)
-    {
-      LidarPostObstaclePre post_pre;
-      post_pre.x = post_ret.boxes(i, 0);
-      post_pre.y = post_ret.boxes(i, 1);
-      post_pre.z = post_ret.boxes(i, 2);
-      post_pre.l = post_ret.boxes(i, 3);
-      post_pre.w = post_ret.boxes(i, 4);
-      post_pre.h = post_ret.boxes(i, 5);
-      post_pre.direction = post_ret.boxes(i, 6);
-      post_pre.cls = post_ret.labels(i, 0);
-      post_pre.flag = 1;
-
-      if (0 == post_pre.cls)
-      {
-        post_pre.cls = 1;
-        lidar_v_src.push_back(post_pre);
-      }
-      else if (3 == post_pre.cls)
-      {
-        post_pre.cls = 2;
-        lidar_v_src.push_back(post_pre);
-      }
-      else if (1 == post_pre.cls)
-      {
-        post_pre.cls = 3;
-        lidar_p_src.push_back(post_pre);
-      }
-      else if (2 == post_pre.cls)
-      {
-        post_pre.cls = 4;
-        lidar_p_src.push_back(post_pre);
-      }
-    }
-
-    post_lidar_process_->UpdateV(lidar_v_src, lidar_v_out);
-    post_lidar_process_->UpdateP(lidar_p_src, lidar_p_out);
+//    signed char *p_npy_data = int_buf_.get();
+//    // NCHW-->NHWC, CH:10-->16 padding
+//    {
+//      int s1 = input_h_*input_w_;
+//      int s2 = input_w_ * input_c_;
+//      float* offset_l1_w = 0;
+//      signed char* offset_l1_c = 0;
+//      float* offset_l2_w = 0;
+//      signed char* offset_l2_c = 0;
+//
+//      #pragma omp parallel for
+//      for (int i = 0; i < input_h_; i++)
+//      {
+//        offset_l1_w = i * input_w_ + p_npy_data_temp;
+//        offset_l1_c = p_npy_data + i * s2;
+//        for (int m = 0; m < input_w_; m++)
+//        {
+//          offset_l2_w = offset_l1_w + m;
+//          offset_l2_c = m * input_c_ + offset_l1_c;
+//          for (int c = 0; c < pre_output_c_; c++)
+//          {
+//            float tmp = *(c * s1 + offset_l2_w) * 2.0;
+//            tmp = std::floor(tmp);
+//            tmp = MIN(MAX(tmp,-128),127);
+//            *(offset_l2_c + c) = (signed char)tmp;
+//          }
+//        }
+//      }
+//    }
+//
+//    DataBuffer infer_img_tmp = {0};
+//    infer_img_tmp.start = int_buf_.get();
+//    infer_img_tmp.length = 16 * 400 * 352;
+//
+//    std::vector<int> keep_ids;
+//    keep_ids.reserve(16);
+//    std::vector<float> scores;
+//    scores.reserve(16);
+//    std::vector<int> cls_argmax;
+//    cls_argmax.reserve(16);
+//    std::vector<int> dir_cls_argmax;
+//    dir_cls_argmax.reserve(16);
+//    std::vector<std::vector<float>> boxes;
+//    boxes.reserve(16);
+//    lidar_inference_->Update(infer_img_tmp, nms_score_threshold, keep_ids, scores, cls_argmax, dir_cls_argmax, boxes);
+//
+//    if (!boxes.size())
+//    {
+//      return;
+//    }
+//
+//    // 后处理
+//    PostRet post_ret = std::move(post_process_1(boxes, scores, cls_argmax, dir_cls_argmax, keep_ids, anchors));
+//
+//    cout << "output Rst:" << endl;
+//    std::cout << "post_ret.boxes.rows():" << post_ret.boxes.rows() << std::endl;
+//    std::cout << "post_ret.boxes.cols():" << post_ret.boxes.cols() << std::endl;
+//    std::cout << "post_ret.scores.rows():" << post_ret.scores.rows() << std::endl;
+//    std::cout << "post_ret.scores.cols():" << post_ret.scores.cols() << std::endl;
+//    std::cout << "post_ret.labels.rows():" << post_ret.labels.rows() << std::endl;
+//    std::cout << "post_ret.labels.cols():" << post_ret.labels.cols() << std::endl;
+//
+//    cout << post_ret.boxes << endl
+//         << endl;
+//    cout << post_ret.scores << endl
+//         << endl;
+//    cout << post_ret.labels << endl
+//         << endl;
+//
+//
+//    std::vector<LidarPostObstaclePre> lidar_v_src;
+//    std::vector<LidarPostObstaclePre> lidar_p_src;
+//    std::vector<LidarPostObstacleOut> lidar_v_out;
+//    std::vector<LidarPostObstacleOut> lidar_p_out;
+//
+//    for (int i = 0; i < post_ret.boxes.rows(); i++)
+//    {
+//      LidarPostObstaclePre post_pre;
+//      post_pre.x = post_ret.boxes(i, 0);
+//      post_pre.y = post_ret.boxes(i, 1);
+//      post_pre.z = post_ret.boxes(i, 2);
+//      post_pre.l = post_ret.boxes(i, 3);
+//      post_pre.w = post_ret.boxes(i, 4);
+//      post_pre.h = post_ret.boxes(i, 5);
+//      post_pre.direction = post_ret.boxes(i, 6);
+//      post_pre.cls = post_ret.labels(i, 0);
+//      post_pre.flag = 1;
+//
+//      if (0 == post_pre.cls)
+//      {
+//        post_pre.cls = 1;
+//        lidar_v_src.push_back(post_pre);
+//      }
+//      else if (3 == post_pre.cls)
+//      {
+//        post_pre.cls = 2;
+//        lidar_v_src.push_back(post_pre);
+//      }
+//      else if (1 == post_pre.cls)
+//      {
+//        post_pre.cls = 3;
+//        lidar_p_src.push_back(post_pre);
+//      }
+//      else if (2 == post_pre.cls)
+//      {
+//        post_pre.cls = 4;
+//        lidar_p_src.push_back(post_pre);
+//      }
+//    }
+//
+//    post_lidar_process_->UpdateV(lidar_v_src, lidar_v_out);
+//    post_lidar_process_->UpdateP(lidar_p_src, lidar_p_out);
   }
 
   void LidarProcess::Release()
   {
-    if (post_lidar_process_)
-    {
-      post_lidar_process_->Release();
-    }
-    if (lidar_inference_)
-    {
-      lidar_inference_->Release();
-    }
+//    if (post_lidar_process_)
+//    {
+//      post_lidar_process_->Release();
+//    }
+//    if (lidar_inference_)
+//    {
+//      lidar_inference_->Release();
+//    }
 
     printf("Exit LidarProcess.\n");
   }

@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
 
     uint64_t time_total0 = 0;
     auto t00 = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < 1; i++) {
         processor_->Update(&cloud_data[0], cloud_data.size());
     }
 

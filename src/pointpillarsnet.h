@@ -1,7 +1,7 @@
 #ifndef POINTPILLARSNET_H
 #define POINTPILLARSNET_H
 
-#include <omp.h>
+//#include <omp.h>
 #include <fstream>
 #include "voxel.h"
 
