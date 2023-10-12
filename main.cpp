@@ -19,7 +19,10 @@ int main(int argc, char **argv) {
 
   int run_mode = 1;
   int run_type = -1;
+  MAYBE_UNUSED(uint64_t start = 0LL, stop = 0LL);
+  MAYBE_UNUSED(uint64_t updatestart = 0LL, updatestop = 0LL);
 
+TIME_STAMP(start);
   processor_ = new lidar_perception::LidarProcess();
   processor_->Init("../model/lidar_front");
   {
@@ -55,12 +58,19 @@ int main(int argc, char **argv) {
       current.intensity = tmp_data * 255;
       cloud_data.push_back(current);
     }
+    
+TIME_STAMP(stop);
+    printf("> cycles = %llu \n",(stop - start));
 
     uint64_t time_total0 = 0;
     auto t00 = std::chrono::high_resolution_clock::now();
+TIME_STAMP(updatestart);
     for (int i = 0; i < 1; i++) {
         processor_->Update(&cloud_data[0], cloud_data.size());
     }
+TIME_STAMP(updatestop);
+
+    printf("> processor_->Update cycles = %llu \n",(updatestop - updatestart));
 
     auto t10 = std::chrono::high_resolution_clock::now();
     auto cost0 = std::chrono::duration_cast<std::chrono::microseconds>(t10 - t00).count();
