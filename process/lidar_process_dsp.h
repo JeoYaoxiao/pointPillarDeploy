@@ -1,5 +1,5 @@
-#ifndef _PROCESS_LIDAR_PROCESS_H_
-#define _PROCESS_LIDAR_PROCESS_H_
+#ifndef _PROCESS_LIDAR_PROCESS_DSP_H_
+#define _PROCESS_LIDAR_PROCESS_DSP_H_
 
 #include <mutex>
 #include <queue>
@@ -13,26 +13,29 @@
 #include <xtensa/tie/xt_ivpn.h>
 
 #include "base.h"
-#include "pre_process.h"
+#include "pre_process_dsp.h"
 #include "post_process.h"
+
+#define BST_CPU 1
+#define BST_DSP 1
 
 namespace lidar_perception {
 
 class LidarInference;
 class PostLidarProcess;
 
-class LidarProcess {
+class LidarProcessDSP {
  public:
-  LidarProcess();
-  virtual ~LidarProcess();
+  LidarProcessDSP();
+  virtual ~LidarProcessDSP();
 
   void Init(const std::string &model_path);
   void Update(void *ptr, int size);
   void Release();
 
-  uint64_t time_extract = 0;
-  uint64_t time_update = 0;
   uint64_t time_memcpy = 0;
+  uint64_t time_update = 0;
+  uint64_t time_extract = 0;
   uint64_t time_RtCloudPreprocesss = 0;
   uint64_t time_points_to_voxels = 0;
   uint64_t time_total0 = 0;
@@ -41,8 +44,6 @@ class LidarProcess {
   uint64_t time_total3 = 0;
   uint64_t time_total4 = 0;
   uint64_t time_total5 = 0;
-
-
  private:
   std::shared_ptr<LidarInference> lidar_inference_ = nullptr;
   std::shared_ptr<PostLidarProcess> post_lidar_process_ = nullptr;
@@ -55,8 +56,9 @@ class LidarProcess {
   int pre_output_c_ = 10;
   MatrixXf anchors;
 
+
   int cnt = 0;
 };
 
 }
-#endif /* _PROCESS_LIDAR_PROCESS_H_ */
+#endif /* _PROCESS_LIDAR_PROCESS_DSP_H_ */

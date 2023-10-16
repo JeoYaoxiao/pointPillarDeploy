@@ -4,7 +4,7 @@
 //#include <omp.h>
 #include <fstream>
 #include "voxel.h"
-
+#include "voxel_dsp.h"
 class PointPillarsNet
 {
 private:
@@ -16,6 +16,7 @@ private:
 public:
     PointPillarsNet();
     vector<float> extract(std::shared_ptr<PointsInVoxels>& piv);
+    vector<float> extract(std::shared_ptr<PointsInVoxelsDSP>& piv);
 };
 
 #endif

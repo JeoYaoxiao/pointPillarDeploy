@@ -1,4 +1,4 @@
-#include "lidar_process.h"
+#include "lidar_process_dsp.h"
 
 #include <chrono>
 #include <fcntl.h>
@@ -27,6 +27,7 @@
 
 namespace lidar_perception
 {
+#if 0
 
   void image_to_file(const vector<float> &image, const string &path)
   {
@@ -40,7 +41,7 @@ namespace lidar_perception
   }
   vector<float> test_preprocess(const string &points_path, const string &out_path)
   {
-    vector<float> batch_image = std::move(pre_process(points_path));
+    vector<float> batch_image = std::move(pre_process_dsp(points_path));
 
     return batch_image;
   }
@@ -178,8 +179,8 @@ namespace lidar_perception
   {
     return create_anchor();
   }
-
-  MatrixXf RtCloudPreprocess(MatrixXf &res, bool is_trans)
+#endif
+  MatrixXf RtCloudPreprocessDSP(MatrixXf &res, bool is_trans)
   {
     if (is_trans)
     {
@@ -191,11 +192,11 @@ namespace lidar_perception
     }
   }
 
-  LidarProcess::LidarProcess() {}
+  LidarProcessDSP::LidarProcessDSP() {}
 
-  LidarProcess::~LidarProcess() {}
+  LidarProcessDSP::~LidarProcessDSP() {}
 
-  void LidarProcess::Init(const std::string &model_path)
+  void LidarProcessDSP::Init(const std::string &model_path)
   {
 #if 0
    lidar_inference_ = std::make_shared<LidarInference>();
@@ -210,7 +211,7 @@ namespace lidar_perception
     piv->Init();
   }
 
-  void LidarProcess::Update(void *ptr, int size)
+  void LidarProcessDSP::Update(void *ptr, int size)
   {
 	 //timer
     MAYBE_UNUSED(uint64_t memcpystart = 0LL, memcpystop = 0LL);
@@ -222,7 +223,7 @@ namespace lidar_perception
     MatrixXf res(4, size);
     auto stride = sizeof(PrePointXYZI);
 
-TIME_STAMP(memcpystart);
+    TIME_STAMP(memcpystart);
 
     /*memcpy*/
     for (int i = 0; i < size; i++)
@@ -240,20 +241,21 @@ TIME_STAMP(memcpystart);
       memcpy((char *)res.data() + i * stride + 12, &pre_point.intensity, 4);
     }
 
-TIME_STAMP(memcpystop);
-this->time_memcpy = memcpystop - memcpystart;
+    TIME_STAMP(memcpystop);
+    this->time_memcpy = memcpystop - memcpystart;
+    printf("> processor_dsp->Update >> memcpy cycles = %llu \n",
+           this->time_memcpy);
 
-printf("> processor_->Update >> memcpy cycles = %llu \n",this->time_memcpy);
     /*RtCloudPreprocess*/
-TIME_STAMP(RtCloudPreprocessstart);
-    auto points = std::move(RtCloudPreprocess(res, true));
+    TIME_STAMP(RtCloudPreprocessstart);
+    auto points = std::move(RtCloudPreprocessDSP(res, true));
     Voxel voxel = Voxel();
 
     TIME_STAMP(points_to_voxelsstart);
     voxel.points_to_voxels(points, piv);
     TIME_STAMP(points_to_voxelsstop);
-
     this->time_points_to_voxels = points_to_voxelsstop - points_to_voxelsstart;
+
 
     PointPillarsNet ppn;
 
@@ -263,14 +265,13 @@ TIME_STAMP(RtCloudPreprocessstart);
     this->time_extract  = extractstop - extractstart;
     
     piv->Reset();
+    
     TIME_STAMP(RtCloudPreprocessstop);
-
     this->time_RtCloudPreprocesss = RtCloudPreprocessstop - RtCloudPreprocessstart;
-    printf("> processor_->Update >> points_to_voxels cycles = %llu \n",(this->time_points_to_voxels));
-    printf("> processor_->Update >> voxel.time_extract cycles = %llu \n",(this->time_extract));
-    printf("> processor_->Update >> RtCloudPreprocess cycles = %llu \n",(this->time_RtCloudPreprocesss));
-
-float *p_npy_data_temp = &batch_image[0];
+    printf("> processor_dsp->Update >> RtCloudPreprocessDSP cycles = %llu \n",(this->time_RtCloudPreprocesss));
+    printf("> processor_dsp->Update >> voxel.time_extract cycles = %llu \n",(this->time_extract));
+    printf("> processor_dsp->Update >> RtCloudPreprocess cycles = %llu \n",(this->time_RtCloudPreprocesss));
+    float *p_npy_data_temp = &batch_image[0];
 #if 0
    signed char *p_npy_data = int_buf_.get();
    // NCHW-->NHWC, CH:10-->16 padding
@@ -387,7 +388,7 @@ float *p_npy_data_temp = &batch_image[0];
 #endif
   }
 
-  void LidarProcess::Release()
+  void LidarProcessDSP::Release()
   {
 #if 0
    if (post_lidar_process_)
