@@ -48,7 +48,7 @@ class LidarProcessDSP {
   std::shared_ptr<LidarInference> lidar_inference_ = nullptr;
   std::shared_ptr<PostLidarProcess> post_lidar_process_ = nullptr;
   std::shared_ptr<signed char[]> int_buf_ = nullptr;
-  std::shared_ptr<PointsInVoxels> piv = nullptr;
+  std::shared_ptr<PointsInVoxelsDSP> piv = nullptr;
 
   int input_w_ = 352;
   int input_h_ = 400;

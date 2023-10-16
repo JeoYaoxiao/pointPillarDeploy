@@ -207,7 +207,7 @@ namespace lidar_perception
    int_buf_.reset(new signed char[16 * 400 * 352]);
    anchors = std::move(test_anchors());
 #endif
-    piv = std::make_shared<PointsInVoxels>();
+    piv = std::make_shared<PointsInVoxelsDSP>();
     piv->Init();
   }
 
@@ -249,10 +249,10 @@ namespace lidar_perception
     /*RtCloudPreprocess*/
     TIME_STAMP(RtCloudPreprocessstart);
     auto points = std::move(RtCloudPreprocessDSP(res, true));
-    Voxel voxel = Voxel();
+    VoxelDSP voxel_dsp = VoxelDSP();
 
     TIME_STAMP(points_to_voxelsstart);
-    voxel.points_to_voxels(points, piv);
+    voxel_dsp.points_to_voxels(points, piv);
     TIME_STAMP(points_to_voxelsstop);
     this->time_points_to_voxels = points_to_voxelsstop - points_to_voxelsstart;
 
@@ -265,7 +265,7 @@ namespace lidar_perception
     this->time_extract  = extractstop - extractstart;
     
     piv->Reset();
-    
+
     TIME_STAMP(RtCloudPreprocessstop);
     this->time_RtCloudPreprocesss = RtCloudPreprocessstop - RtCloudPreprocessstart;
     printf("> processor_dsp->Update >> RtCloudPreprocessDSP cycles = %llu \n",(this->time_RtCloudPreprocesss));
