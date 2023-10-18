@@ -16,9 +16,6 @@
 #include "pre_process_dsp.h"
 #include "post_process.h"
 
-#define BST_CPU 1
-#define BST_DSP 1
-
 namespace lidar_perception {
 
 class LidarInference;
@@ -34,6 +31,8 @@ class LidarProcessDSP {
   void Release();
 
   uint64_t time_memcpy = 0;
+  uint64_t time_memcpy_OPT = 0;
+  uint64_t time_memcpy_dsp = 0;
   uint64_t time_update = 0;
   uint64_t time_extract = 0;
   uint64_t time_RtCloudPreprocesss = 0;

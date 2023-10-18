@@ -61,7 +61,7 @@ vector<float> PointPillarsNet::extract(std::shared_ptr<PointsInVoxels>& piv)
     return image1;
 }
 
-
+// Add by yaoxiao
 vector<float> PointPillarsNet::extract(std::shared_ptr<PointsInVoxelsDSP>& piv)
 {
     // vector<MatrixXf> voxels(std::move(piv.voxels));

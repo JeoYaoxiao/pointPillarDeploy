@@ -53,5 +53,3 @@ Thumbs.db
 Makefile
 .cache/simdvMessages/visionp6_ao/Release.simdvmsgs
 bin/*
-
-bin/visionp6_ao/Debug/._build_props_

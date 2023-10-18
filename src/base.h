@@ -9,6 +9,13 @@
 #include <iostream>
 #include <numeric>
 
+#include <xtensa/sim.h>
+#include <xtensa/tie/xt_ivp32.h>
+#include <xtensa/tie/xt_ivpn.h>
+
+#define BST_CPU 0
+#define BST_DSP 1
+
 using namespace std;
 using namespace Eigen;
 

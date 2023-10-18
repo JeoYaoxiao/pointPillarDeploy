@@ -10,8 +10,7 @@
 #include "lidar_data_common.h"
 
 using namespace std;
-#define BST_CPU 1
-#define BST_DSP 1
+
 lidar_perception::LidarProcess *processor_ = nullptr;
 
 lidar_perception::LidarProcessDSP *processor_dsp = nullptr;
@@ -26,7 +25,7 @@ int main(int argc, char **argv) {
   MAYBE_UNUSED(uint64_t updatestart = 0LL, updatestop = 0LL);
 #if BST_CPU
 
-  printf("CPU----------------------------------------------------------\n");
+  printf("\nCPU==============================================================\n");
 
   TIME_STAMP(start);
   processor_ = new lidar_perception::LidarProcess();
@@ -100,7 +99,9 @@ int main(int argc, char **argv) {
   //=============================================================
 #if BST_DSP
 
-  printf("DSP----------------------------------------------------------\n");
+  printf("\nDSP============================================================\n");
+  printf("XCHAL_IVPN_SIMD_WIDTH-------------------------------------------%d\n",
+		  XCHAL_IVPN_SIMD_WIDTH);
   TIME_STAMP(start);
   processor_dsp = new lidar_perception::LidarProcessDSP();
   processor_dsp->Init("../model/lidar_front");
@@ -168,6 +169,7 @@ int main(int argc, char **argv) {
     delete processor_dsp;
     processor_dsp = nullptr;
 #endif // BST_DSP
+
   return 0;
 }
 
