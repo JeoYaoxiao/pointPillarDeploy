@@ -251,36 +251,8 @@ namespace lidar_perception
     this->time_memcpy = memcpystop - memcpystart;
     printf("> processor_dsp->Update >> memcpy cycles = %llu \n",
            this->time_memcpy);
-#if 1 // OPT code
-    MatrixXf res2(4, size);
-    TIME_STAMP(memcpyOPTstart);
 
-     /*memcpy*/
-     for (int i = 0; i < size; i++)
-     {
-       auto &data = ptr_tmp[i];
-       PrePointXYZI pre_point;
-
-       pre_point.x = data.x;
-       pre_point.y = data.y;
-       pre_point.z = data.z;
-       pre_point.intensity = data.intensity / 255.0;
-
-       memcpy((char *)res2.data() + i * stride, &pre_point.x, 16);
-//       memcpy((char *)res.data() + i * stride + 4, &pre_point.y, 4);
-//       memcpy((char *)res.data() + i * stride + 8, &pre_point.z, 4);
-//       memcpy((char *)res.data() + i * stride + 12, &pre_point.intensity, 4);
-
-
-     }
-     TIME_STAMP(memcpyOPTstop);
-     printf(">>>memcpyOPT>>>>>>>>>>>memcmp=%d\n", memcmp(res.data(), res2.data(), size));
-     this->time_memcpy_OPT = memcpyOPTstop - memcpyOPTstart;
-     printf("> processor_dsp->Update >> memcpyOPT cycles = %llu \n",
-            this->time_memcpy_OPT);
-#endif
-
-#if 1 //DSP
+#if 0 //DSP
     MatrixXf res1(4, size);
 
     TIME_STAMP(memcpystartDSP);
