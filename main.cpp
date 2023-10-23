@@ -22,7 +22,9 @@ int main(int argc, char **argv) {
   int run_mode = 1;
   int run_type = -1;
   MAYBE_UNUSED(uint64_t start = 0LL, stop = 0LL);
+  MAYBE_UNUSED(uint64_t start_post = 0LL, stop_post = 0LL);
   MAYBE_UNUSED(uint64_t updatestart = 0LL, updatestop = 0LL);
+
 #if BST_CPU
 
   printf("\nCPU==============================================================\n");
@@ -188,6 +190,67 @@ int main(int argc, char **argv) {
   processor_dsp = nullptr;
 #endif // BST_DSP
 
+
+#if 1
+    printf("\nDSP post_process============================================================\n");
+	std::vector<int> keep_ids;
+	keep_ids.reserve(16);
+	std::vector<float> scores;
+	scores.reserve(16);
+	std::vector<int> cls_argmax;
+	cls_argmax.reserve(16);
+	std::vector<int> dir_cls_argmax;
+	dir_cls_argmax.reserve(16);
+	std::vector<std::vector<float>> boxes;
+	boxes.reserve(16);
+
+	for (int j = 0; j < 32; j++) {
+		keep_ids.push_back(j);
+		cls_argmax.push_back(j);
+		dir_cls_argmax.push_back(j);
+		scores.push_back(j * 0.1);
+	}
+
+	for (int i = 0; i < 32; i++) {
+		vector<float> one;
+		for (int j = 0; j < 8; j++) {
+			one.push_back(j * 0.1);
+		}
+		boxes.push_back(one);
+	}
+
+	MatrixXf anchors_in(32, 8);
+	for (int i = 0; i < 32; i++) {
+		for (int j = 0; j < 8; j++) {
+			anchors_in(i, j) = i * 0.1 * j;
+		}
+	}
+	// 后处理
+    TIME_STAMP(start_post);
+	PostRetDSP post_ret = std::move(
+			post_process_1_dsp(boxes, scores, cls_argmax, dir_cls_argmax, keep_ids,
+					anchors_in));
+    TIME_STAMP(stop_post);
+
+	uint64_t diff = stop_post - start_post;
+
+	cout << "> processor_dsp->post_process_1 cycles = : " << diff << endl;
+
+	cout << "output Rst:" << endl;
+	std::cout << "post_ret.boxes.rows():" << post_ret.boxes.rows() << std::endl;
+	std::cout << "post_ret.boxes.cols():" << post_ret.boxes.cols() << std::endl;
+	std::cout << "post_ret.scores.rows():" << post_ret.scores.rows()
+			<< std::endl;
+	std::cout << "post_ret.scores.cols():" << post_ret.scores.cols()
+			<< std::endl;
+	std::cout << "post_ret.labels.rows():" << post_ret.labels.rows()
+			<< std::endl;
+	std::cout << "post_ret.labels.cols():" << post_ret.labels.cols()
+			<< std::endl;
+	cout << post_ret.boxes << endl << endl;
+	cout << post_ret.scores << endl << endl;
+	cout << post_ret.labels << endl << endl;
+#endif
   return 0;
 }
 

@@ -202,7 +202,7 @@ namespace lidar_perception
    lidar_inference_->Init(model_path, "front_lidar", INFER_USER_ADDR);
    post_lidar_process_ = std::make_shared<PostLidarProcess>();
    post_lidar_process_->Init();
-    int_buf_. = std::make_shared<>(new char[10*400*352]);
+   int_buf_. = std::make_shared<>(new char[10*400*352]);
    int_buf_.reset(new signed char[16 * 400 * 352]);
    anchors = std::move(test_anchors());
 #endif
@@ -222,7 +222,7 @@ namespace lidar_perception
     MatrixXf res(4, size);
     auto stride = sizeof(PrePointXYZI);
 
-TIME_STAMP(memcpystart);
+    TIME_STAMP(memcpystart);
 
     /*memcpy*/
     for (int i = 0; i < size; i++)
@@ -240,10 +240,11 @@ TIME_STAMP(memcpystart);
       memcpy((char *)res.data() + i * stride + 12, &pre_point.intensity, 4);
     }
 
-TIME_STAMP(memcpystop);
-this->time_memcpy = memcpystop - memcpystart;
+    TIME_STAMP(memcpystop);
+    this->time_memcpy = memcpystop - memcpystart;
 
-printf("> processor_->Update >> memcpy cycles = %llu \n",this->time_memcpy);
+    printf("> processor_->Update >> memcpy cycles = %llu \n",
+           this->time_memcpy);
     /*RtCloudPreprocess*/
 TIME_STAMP(RtCloudPreprocessstart);
     auto points = std::move(RtCloudPreprocess(res, true));
@@ -270,38 +271,38 @@ TIME_STAMP(RtCloudPreprocessstart);
     printf("> processor_->Update >> voxel.time_extract cycles = %llu \n",(this->time_extract));
     printf("> processor_->Update >> RtCloudPreprocess cycles = %llu \n",(this->time_RtCloudPreprocesss));
 
-float *p_npy_data_temp = &batch_image[0];
+    float *p_npy_data_temp = &batch_image[0];
+
 #if 0
-   signed char *p_npy_data = int_buf_.get();
-   // NCHW-->NHWC, CH:10-->16 padding
-   {
-     int s1 = input_h_*input_w_;
-     int s2 = input_w_ * input_c_;
-     float* offset_l1_w = 0;
-     signed char* offset_l1_c = 0;
-     float* offset_l2_w = 0;
-     signed char* offset_l2_c = 0;
+    signed char *p_npy_data = (signed char *)int_buf_.get();
+    // NCHW-->NHWC, CH:10-->16 padding
+    {
+      int s1 = input_h_ * input_w_;
+      int s2 = input_w_ * input_c_;
+      float *offset_l1_w = 0;
+      signed char *offset_l1_c = 0;
+      float *offset_l2_w = 0;
+      signed char *offset_l2_c = 0;
 
-     #pragma omp parallel for
-     for (int i = 0; i < input_h_; i++)
-     {
-       offset_l1_w = i * input_w_ + p_npy_data_temp;
-       offset_l1_c = p_npy_data + i * s2;
-       for (int m = 0; m < input_w_; m++)
-       {
-         offset_l2_w = offset_l1_w + m;
-         offset_l2_c = m * input_c_ + offset_l1_c;
-         for (int c = 0; c < pre_output_c_; c++)
-         {
-           float tmp = *(c * s1 + offset_l2_w) * 2.0;
-           tmp = std::floor(tmp);
-           tmp = MIN(MAX(tmp,-128),127);
-           *(offset_l2_c + c) = (signed char)tmp;
-         }
-       }
-     }
-   }
+      #pragma omp parallel for
+      for (int i = 0; i < input_h_; i++) {
+        offset_l1_w = i * input_w_ + p_npy_data_temp;
+        offset_l1_c = p_npy_data + i * s2;
+        for (int m = 0; m < input_w_; m++) {
+          offset_l2_w = offset_l1_w + m;
+          offset_l2_c = m * input_c_ + offset_l1_c;
+          for (int c = 0; c < pre_output_c_; c++) {
+            float tmp = *(c * s1 + offset_l2_w) * 2.0;
+            tmp = std::floor(tmp);
+            tmp = MIN(MAX(tmp, -128), 127);
+            *(offset_l2_c + c) = (signed char)tmp;
+          }
+        }
+      }
+    }
+#endif
 
+#if 0
    DataBuffer infer_img_tmp = {0};
    infer_img_tmp.start = int_buf_.get();
    infer_img_tmp.length = 16 * 400 * 352;
@@ -322,7 +323,45 @@ float *p_npy_data_temp = &batch_image[0];
    {
      return;
    }
+#endif
 
+#if 0 //Add by haitao dataset for post_process_1
+	std::vector<int> keep_ids;
+	keep_ids.reserve(16);
+	std::vector<float> scores;
+	scores.reserve(16);
+	std::vector<int> cls_argmax;
+	cls_argmax.reserve(16);
+	std::vector<int> dir_cls_argmax;
+	dir_cls_argmax.reserve(16);
+	std::vector<std::vector<float>> boxes;
+	boxes.reserve(16);
+
+	for (int j = 0; j < 32; j++) {
+		keep_ids.push_back(j);
+		cls_argmax.push_back(j);
+		dir_cls_argmax.push_back(j);
+		scores.push_back(j * 0.1);
+	}
+
+	for (int i = 0; i < 32; i++) {
+		vector<float> one;
+		for (int j = 0; j < 8; j++) {
+			one.push_back(j * 0.1);
+		}
+		boxes.push_back(one);
+	}
+
+	MatrixXf anchors_in(32, 8);
+	for (int i = 0; i < 32; i++) {
+		for (int j = 0; j < 8; j++) {
+			anchors_in(i, j) = i * 0.1 * j;
+		}
+	}
+#endif
+
+
+#if 0
    // 后处理
    PostRet post_ret = std::move(post_process_1(boxes, scores, cls_argmax, dir_cls_argmax, keep_ids, anchors));
 
@@ -341,7 +380,7 @@ float *p_npy_data_temp = &batch_image[0];
    cout << post_ret.labels << endl
         << endl;
 
-
+#if 0
    std::vector<LidarPostObstaclePre> lidar_v_src;
    std::vector<LidarPostObstaclePre> lidar_p_src;
    std::vector<LidarPostObstacleOut> lidar_v_out;
@@ -381,9 +420,10 @@ float *p_npy_data_temp = &batch_image[0];
        lidar_p_src.push_back(post_pre);
      }
    }
-
    post_lidar_process_->UpdateV(lidar_v_src, lidar_v_out);
    post_lidar_process_->UpdateP(lidar_p_src, lidar_p_out);
+#endif
+
 #endif
   }
 

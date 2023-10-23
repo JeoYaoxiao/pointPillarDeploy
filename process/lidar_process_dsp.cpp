@@ -215,76 +215,36 @@ namespace lidar_perception
   {
 	 //timer
     MAYBE_UNUSED(uint64_t memcpystart = 0LL, memcpystop = 0LL);
-    MAYBE_UNUSED(uint64_t memcpyOPTstart = 0LL, memcpyOPTstop = 0LL);
-    MAYBE_UNUSED(uint64_t memcpystartDSP = 0LL, memcpystopDSP = 0LL);
     MAYBE_UNUSED(uint64_t RtCloudPreprocessstart = 0LL, RtCloudPreprocessstop = 0LL);
     MAYBE_UNUSED(uint64_t points_to_voxelsstart = 0LL, points_to_voxelsstop = 0LL);
     MAYBE_UNUSED(uint64_t extractstart = 0LL, extractstop = 0LL);
 
     auto ptr_tmp = (PointXYZI *)ptr;
     MatrixXf res(4, size);
-
     auto stride = sizeof(PrePointXYZI);
 
-    TIME_STAMP(memcpystart);
+TIME_STAMP(memcpystart);
 
     /*memcpy*/
     for (int i = 0; i < size; i++)
     {
       auto &data = ptr_tmp[i];
       PrePointXYZI pre_point;
-
       pre_point.x = data.x;
       pre_point.y = data.y;
       pre_point.z = data.z;
       pre_point.intensity = data.intensity / 255.0;
 
-      memcpy((char *)res.data() + i * stride, &pre_point.x, 16);
+      memcpy((char *)res.data() + i * stride, &pre_point.x, 4);
       memcpy((char *)res.data() + i * stride + 4, &pre_point.y, 4);
       memcpy((char *)res.data() + i * stride + 8, &pre_point.z, 4);
       memcpy((char *)res.data() + i * stride + 12, &pre_point.intensity, 4);
-
-
     }
-    TIME_STAMP(memcpystop);
 
-    this->time_memcpy = memcpystop - memcpystart;
-    printf("> processor_dsp->Update >> memcpy cycles = %llu \n",
-           this->time_memcpy);
+TIME_STAMP(memcpystop);
+this->time_memcpy = memcpystop - memcpystart;
 
-#if 0 //DSP
-    MatrixXf res1(4, size);
-
-    TIME_STAMP(memcpystartDSP);
-    xb_vecN_2xf32 matData;
-    xb_vecN_2xf32 matResult;
-
-    xb_vecN_2xf32 * __restrict pmatData;
-    xb_vecN_2xf32 * __restrict pmatResult;
-    pmatData  = (xb_vecN_2xf32 *) ptr_tmp;
-    pmatResult = (xb_vecN_2xf32 *) res1.data();
-
-//    for (int idx = 0; idx < (size / XCHAL_IVPN_SIMD_WIDTH); idx++)
-//    {
-//    	matData = *pmatData++;
-//    	matResult = matData;
-//    	*pmatResult++ = matResult;
-//    }
-
-//    xb_vecN_2xf32 matOut;
-//    xb_vecN_2xf32 matResultOut;
-//    IVP_DSELN_2XF32I(matOut, matResultOut, matData, matResult, IVP_DSELI_8B_INTERLEAVE_C3_STEP_0);
-
-
-    TIME_STAMP(memcpystopDSP);
-    this->time_memcpy_dsp = memcpystopDSP - memcpystartDSP;
-    printf("> processor_dsp->Update >> time_memcpy_dsp cycles = %llu \n",
-              this->time_memcpy_dsp);
-
-    printf(">>>memcpy>>>>>>>>>>>memcmp=%d\n", memcmp(res.data(), res1.data(), size));
-
-    #endif
-
+printf("> processor_dsp->Update >> memcpy cycles = %llu \n",this->time_memcpy);
     /*RtCloudPreprocess*/
     TIME_STAMP(RtCloudPreprocessstart);
     auto points = std::move(RtCloudPreprocessDSP(res, true));
@@ -293,8 +253,8 @@ namespace lidar_perception
     TIME_STAMP(points_to_voxelsstart);
     voxel_dsp.points_to_voxels(points, piv);
     TIME_STAMP(points_to_voxelsstop);
-    this->time_points_to_voxels = points_to_voxelsstop - points_to_voxelsstart;
 
+    this->time_points_to_voxels = points_to_voxelsstop - points_to_voxelsstart;
 
     PointPillarsNet ppn;
 
@@ -304,13 +264,13 @@ namespace lidar_perception
     this->time_extract  = extractstop - extractstart;
     
     piv->Reset();
-
     TIME_STAMP(RtCloudPreprocessstop);
+
     this->time_RtCloudPreprocesss = RtCloudPreprocessstop - RtCloudPreprocessstart;
-    printf("> processor_dsp->Update >> RtCloudPreprocessDSP cycles = %llu \n",(this->time_RtCloudPreprocesss));
+    printf("> processor_dsp->Update >> points_to_voxels cycles = %llu \n",(this->time_points_to_voxels));
     printf("> processor_dsp->Update >> voxel.time_extract cycles = %llu \n",(this->time_extract));
     printf("> processor_dsp->Update >> RtCloudPreprocess cycles = %llu \n",(this->time_RtCloudPreprocesss));
-    float *p_npy_data_temp = &batch_image[0];
+float *p_npy_data_temp = &batch_image[0];
 #if 0
    signed char *p_npy_data = int_buf_.get();
    // NCHW-->NHWC, CH:10-->16 padding
