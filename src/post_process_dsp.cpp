@@ -197,7 +197,6 @@ PostRetDSP post_process_1_dsp(const vector<vector<float>> &in_boxes,
     MatrixXf anchors(keep_size, num_box_features);
     MatrixXi cls(keep_size, 1);
     MatrixXi dir_cls(keep_size, 1);
-    MAYBE_UNUSED(uint64_t decode_start = 0LL, decode_stop = 0LL);
 
     #pragma omp parallel for
     for (int i = 0; i < keep_size; ++i)
@@ -210,9 +209,7 @@ PostRetDSP post_process_1_dsp(const vector<vector<float>> &in_boxes,
             boxes(i, j) = in_boxes[i][j];
         }
     }
-    TIME_STAMP(decode_start);
     MatrixXf boxes_decoded = decode_dsp(boxes, anchors);
-    TIME_STAMP(decode_stop);
 
     MatrixXf center_xy(keep_size, 2);
     #pragma omp parallel for

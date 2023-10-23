@@ -15,7 +15,8 @@ lidar_perception::LidarProcess *processor_ = nullptr;
 
 lidar_perception::LidarProcessDSP *processor_dsp = nullptr;
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
   char *image_path = NULL;
   char *video_path = NULL;
 
@@ -35,7 +36,8 @@ int main(int argc, char **argv) {
   std::vector<lidar_perception::PointXYZI> cloud_data;
   {
     std::ifstream file("000019.bin", std::ios::in | std::ios::binary);
-    if (!file) {
+    if (!file)
+    {
       printf("no such file\n");
     }
 
@@ -52,7 +54,8 @@ int main(int argc, char **argv) {
 
     std::ifstream in("000019.bin", std::ios::in | std::ios::binary);
     float tmp_data;
-    for (int i = 0; i < rows; i++) {
+    for (int i = 0; i < rows; i++)
+    {
       lidar_perception::PointXYZI current;
       in.read((char *)&tmp_data, sizeof(float));
       current.x = tmp_data;
@@ -73,7 +76,8 @@ int main(int argc, char **argv) {
     // auto t00 = std::chrono::high_resolution_clock::now();
 
     TIME_STAMP(updatestart);
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 1; i++)
+    {
       processor_->Update(&cloud_data[0], cloud_data.size());
     }
     TIME_STAMP(updatestop);
@@ -99,8 +103,7 @@ int main(int argc, char **argv) {
   processor_->Release();
   delete processor_;
   processor_ = nullptr;
-#endif //BST_CPU
-
+#endif // BST_CPU
 
   //=============================================================
   //== DSP Compare
@@ -109,14 +112,15 @@ int main(int argc, char **argv) {
 
   printf("\nDSP============================================================\n");
   printf("XCHAL_IVPN_SIMD_WIDTH-------------------------------------------%d\n",
-		  XCHAL_IVPN_SIMD_WIDTH);
+         XCHAL_IVPN_SIMD_WIDTH);
   TIME_STAMP(start);
   processor_dsp = new lidar_perception::LidarProcessDSP();
   processor_dsp->Init("../model/lidar_front");
   std::vector<lidar_perception::PointXYZI> cloud_data_dsp;
   {
     std::ifstream file("000019.bin", std::ios::in | std::ios::binary);
-    if (!file) {
+    if (!file)
+    {
       printf("no such file\n");
     }
 
@@ -133,7 +137,8 @@ int main(int argc, char **argv) {
 
     std::ifstream in("000019.bin", std::ios::in | std::ios::binary);
     float tmp_data;
-    for (int i = 0; i < rows; i++) {
+    for (int i = 0; i < rows; i++)
+    {
       lidar_perception::PointXYZI current;
       in.read((char *)&tmp_data, sizeof(float));
       current.x = tmp_data;
@@ -154,7 +159,8 @@ int main(int argc, char **argv) {
     auto t00 = std::chrono::high_resolution_clock::now();
 
     TIME_STAMP(updatestart);
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 1; i++)
+    {
       processor_dsp->Update(&cloud_data_dsp[0], cloud_data_dsp.size());
     }
     TIME_STAMP(updatestop);
@@ -190,67 +196,159 @@ int main(int argc, char **argv) {
   processor_dsp = nullptr;
 #endif // BST_DSP
 
+#if 1 // CPU post_process
 
-#if 1
-    printf("\nDSP post_process============================================================\n");
-	std::vector<int> keep_ids;
-	keep_ids.reserve(16);
-	std::vector<float> scores;
-	scores.reserve(16);
-	std::vector<int> cls_argmax;
-	cls_argmax.reserve(16);
-	std::vector<int> dir_cls_argmax;
-	dir_cls_argmax.reserve(16);
-	std::vector<std::vector<float>> boxes;
-	boxes.reserve(16);
+  printf("\nCPU post_process============================================================\n");
+  std::vector<int> keep_ids;
+  keep_ids.reserve(16);
+  std::vector<float> scores;
+  scores.reserve(16);
+  std::vector<int> cls_argmax;
+  cls_argmax.reserve(16);
+  std::vector<int> dir_cls_argmax;
+  dir_cls_argmax.reserve(16);
+  std::vector<std::vector<float>> boxes;
+  boxes.reserve(16);
 
-	for (int j = 0; j < 32; j++) {
-		keep_ids.push_back(j);
-		cls_argmax.push_back(j);
-		dir_cls_argmax.push_back(j);
-		scores.push_back(j * 0.1);
-	}
+  for (int j = 0; j < 32; j++)
+  {
+    keep_ids.push_back(j);
+    cls_argmax.push_back(j);
+    dir_cls_argmax.push_back(j);
+    scores.push_back(j * 0.1);
+  }
 
-	for (int i = 0; i < 32; i++) {
-		vector<float> one;
-		for (int j = 0; j < 8; j++) {
-			one.push_back(j * 0.1);
-		}
-		boxes.push_back(one);
-	}
+  for (int i = 0; i < 32; i++)
+  {
+    vector<float> one;
+    for (int j = 0; j < 8; j++)
+    {
+      one.push_back(j * 0.1);
+    }
+    boxes.push_back(one);
+  }
 
-	MatrixXf anchors_in(32, 8);
-	for (int i = 0; i < 32; i++) {
-		for (int j = 0; j < 8; j++) {
-			anchors_in(i, j) = i * 0.1 * j;
-		}
-	}
-	// 后处理
-    TIME_STAMP(start_post);
-	PostRetDSP post_ret = std::move(
-			post_process_1_dsp(boxes, scores, cls_argmax, dir_cls_argmax, keep_ids,
-					anchors_in));
-    TIME_STAMP(stop_post);
+  MatrixXf anchors_in(32, 8);
+  for (int i = 0; i < 32; i++)
+  {
+    for (int j = 0; j < 8; j++)
+    {
+      anchors_in(i, j) = i * 0.1 * j;
+    }
+  }
+  // 后处理
+  TIME_STAMP(start_post);
+  PostRet post_ret = std::move(
+      post_process_1(boxes, scores, cls_argmax, dir_cls_argmax, keep_ids,
+                     anchors_in));
+  TIME_STAMP(stop_post);
 
-	uint64_t diff = stop_post - start_post;
+  uint64_t diff = stop_post - start_post;
 
-	cout << "> processor_dsp->post_process_1 cycles = : " << diff << endl;
+  cout << "> processor_cpu->post_process_1 cycles = : " << diff << endl;
 
-	cout << "output Rst:" << endl;
-	std::cout << "post_ret.boxes.rows():" << post_ret.boxes.rows() << std::endl;
-	std::cout << "post_ret.boxes.cols():" << post_ret.boxes.cols() << std::endl;
-	std::cout << "post_ret.scores.rows():" << post_ret.scores.rows()
-			<< std::endl;
-	std::cout << "post_ret.scores.cols():" << post_ret.scores.cols()
-			<< std::endl;
-	std::cout << "post_ret.labels.rows():" << post_ret.labels.rows()
-			<< std::endl;
-	std::cout << "post_ret.labels.cols():" << post_ret.labels.cols()
-			<< std::endl;
-	cout << post_ret.boxes << endl << endl;
-	cout << post_ret.scores << endl << endl;
-	cout << post_ret.labels << endl << endl;
+  cout << "output Rst:" << endl;
+  std::cout << "post_ret.boxes.rows():" << post_ret.boxes.rows() << std::endl;
+  std::cout << "post_ret.boxes.cols():" << post_ret.boxes.cols() << std::endl;
+  std::cout << "post_ret.scores.rows():" << post_ret.scores.rows()
+            << std::endl;
+  std::cout << "post_ret.scores.cols():" << post_ret.scores.cols()
+            << std::endl;
+  std::cout << "post_ret.labels.rows():" << post_ret.labels.rows()
+            << std::endl;
+  std::cout << "post_ret.labels.cols():" << post_ret.labels.cols()
+            << std::endl;
+  cout << post_ret.boxes << endl
+       << endl;
+  cout << post_ret.scores << endl
+       << endl;
+  cout << post_ret.labels << endl
+       << endl;
+
+#endif
+
+#if 1 // DSP post_process
+  printf("\nDSP post_process============================================================\n");
+  std::vector<int> keep_ids_dsp;
+  keep_ids_dsp.reserve(16);
+  std::vector<float> scores_dsp;
+  scores_dsp.reserve(16);
+  std::vector<int> cls_argmax_dsp;
+  cls_argmax_dsp.reserve(16);
+  std::vector<int> dir_cls_argmax_dsp;
+  dir_cls_argmax_dsp.reserve(16);
+  std::vector<std::vector<float>> boxes_dsp;
+  boxes_dsp.reserve(16);
+
+  for (int j = 0; j < 32; j++)
+  {
+    keep_ids_dsp.push_back(j);
+    cls_argmax_dsp.push_back(j);
+    dir_cls_argmax_dsp.push_back(j);
+    scores_dsp.push_back(j * 0.1);
+  }
+
+  for (int i = 0; i < 32; i++)
+  {
+    vector<float> one;
+    for (int j = 0; j < 8; j++)
+    {
+      one.push_back(j * 0.1);
+    }
+    boxes_dsp.push_back(one);
+  }
+
+  MatrixXf anchors_in_dsp(32, 8);
+  for (int i = 0; i < 32; i++)
+  {
+    for (int j = 0; j < 8; j++)
+    {
+      anchors_in_dsp(i, j) = i * 0.1 * j;
+    }
+  }
+  // 后处理
+  TIME_STAMP(start_post);
+  PostRetDSP post_ret_dsp = std::move(
+      post_process_1_dsp(boxes_dsp, scores_dsp, cls_argmax_dsp, dir_cls_argmax_dsp, keep_ids_dsp,
+                         anchors_in_dsp));
+  TIME_STAMP(stop_post);
+
+  uint64_t diff_dsp = stop_post - start_post;
+
+  cout << "> processor_dsp->post_process_1_dsp cycles = : " << diff_dsp << endl;
+
+  cout << "output post_ret_dsp:" << endl;
+  std::cout << "post_ret_dsp.boxes.rows():" << post_ret_dsp.boxes.rows()
+            << std::endl;
+  std::cout << "post_ret_dsp.boxes.cols():" << post_ret_dsp.boxes.cols()
+            << std::endl;
+  std::cout << "post_ret_dsp.scores.rows():" << post_ret_dsp.scores.rows()
+            << std::endl;
+  std::cout << "post_ret_dsp.scores.cols():" << post_ret_dsp.scores.cols()
+            << std::endl;
+  std::cout << "post_ret_dsp.labels.rows():" << post_ret_dsp.labels.rows()
+            << std::endl;
+  std::cout << "post_ret_dsp.labels.cols():" << post_ret_dsp.labels.cols()
+            << std::endl;
+  cout << post_ret_dsp.boxes << endl
+       << endl;
+  cout << post_ret_dsp.scores << endl
+       << endl;
+  cout << post_ret_dsp.labels << endl
+       << endl;
+
+  printf(
+      ">>>PostRet.boxes>>>>>>>>>>>memcmp=%d\n",
+      memcmp(post_ret_dsp.boxes.data(), post_ret.boxes.data(), post_ret.boxes.size()));
+
+  printf(
+      ">>>PostRet.scores>>>>>>>>>>>memcmp=%d\n",
+      memcmp(post_ret_dsp.scores.data(), post_ret.scores.data(), post_ret.scores.size()));
+
+  printf(
+      ">>>PostRet.labels>>>>>>>>>>>memcmp=%d\n",
+      memcmp(post_ret_dsp.labels.data(), post_ret.labels.data(), post_ret.labels.size()));
+
 #endif
   return 0;
 }
-
