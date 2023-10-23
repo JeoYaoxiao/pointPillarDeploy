@@ -1,0 +1,348 @@
+{
+  "name": "noPFNLayer_model",
+  "meta_fmt_ver": 0.4,
+  "net_fw_version": "cbc4a687dc3a761995959bb77b8902dfb1774ce4",
+  "has_edp_gemm": "N",
+  "net_batch_size": 1,
+  "in_tensors": {
+    "num": 1,
+    "tensor_0": {
+      "name": "rf_000_DMA_IN_000_ts",
+      "tensor_name": "batch_image",
+      "dequant_scale_num": 1,
+      "dequant_scale": [
+        1.0
+      ],
+      "ctype": "DEFAULT",
+      "dorder": "DWH",
+      "dtype": "INT8",
+      "Dim": {
+        "size": [
+          10,
+          352,
+          400,
+          1
+        ],
+        "pitch": [
+          16,
+          352,
+          400,
+          1
+        ]
+      }
+    }
+  },
+  "out_tensors": {
+    "num": 12,
+    "tensor_0": {
+      "name": "rf_001_CONV_009_ts",
+      "tensor_name": "cls_pred0",
+      "dequant_scale_num": 1,
+      "dequant_scale": [
+        0.125
+      ],
+      "ctype": "DEFAULT",
+      "dorder": "WHD",
+      "dtype": "INT8",
+      "Dim": {
+        "size": [
+          176,
+          200,
+          8,
+          1
+        ],
+        "pitch": [
+          176,
+          200,
+          8,
+          1
+        ]
+      }
+    },
+    "tensor_1": {
+      "name": "rf_001_CONV_010_ts",
+      "tensor_name": "box_pred0",
+      "dequant_scale_num": 1,
+      "dequant_scale": [
+        0.03125
+      ],
+      "ctype": "DEFAULT",
+      "dorder": "WHD",
+      "dtype": "INT8",
+      "Dim": {
+        "size": [
+          176,
+          200,
+          14,
+          1
+        ],
+        "pitch": [
+          176,
+          200,
+          14,
+          1
+        ]
+      }
+    },
+    "tensor_2": {
+      "name": "rf_001_CONV_011_ts",
+      "tensor_name": "dir_pred0",
+      "dequant_scale_num": 1,
+      "dequant_scale": [
+        0.0625
+      ],
+      "ctype": "DEFAULT",
+      "dorder": "WHD",
+      "dtype": "INT8",
+      "Dim": {
+        "size": [
+          176,
+          200,
+          4,
+          1
+        ],
+        "pitch": [
+          176,
+          200,
+          4,
+          1
+        ]
+      }
+    },
+    "tensor_3": {
+      "name": "rf_001_CONV_012_ts",
+      "tensor_name": "cls_pred1",
+      "dequant_scale_num": 1,
+      "dequant_scale": [
+        0.125
+      ],
+      "ctype": "DEFAULT",
+      "dorder": "WHD",
+      "dtype": "INT8",
+      "Dim": {
+        "size": [
+          176,
+          200,
+          8,
+          1
+        ],
+        "pitch": [
+          176,
+          200,
+          8,
+          1
+        ]
+      }
+    },
+    "tensor_4": {
+      "name": "rf_001_CONV_013_ts",
+      "tensor_name": "box_pred1",
+      "dequant_scale_num": 1,
+      "dequant_scale": [
+        0.03125
+      ],
+      "ctype": "DEFAULT",
+      "dorder": "WHD",
+      "dtype": "INT8",
+      "Dim": {
+        "size": [
+          176,
+          200,
+          14,
+          1
+        ],
+        "pitch": [
+          176,
+          200,
+          14,
+          1
+        ]
+      }
+    },
+    "tensor_5": {
+      "name": "rf_001_CONV_014_ts",
+      "tensor_name": "dir_pred1",
+      "dequant_scale_num": 1,
+      "dequant_scale": [
+        0.015625
+      ],
+      "ctype": "DEFAULT",
+      "dorder": "WHD",
+      "dtype": "INT8",
+      "Dim": {
+        "size": [
+          176,
+          200,
+          4,
+          1
+        ],
+        "pitch": [
+          176,
+          200,
+          4,
+          1
+        ]
+      }
+    },
+    "tensor_6": {
+      "name": "rf_001_CONV_015_ts",
+      "tensor_name": "cls_pred2",
+      "dequant_scale_num": 1,
+      "dequant_scale": [
+        0.125
+      ],
+      "ctype": "DEFAULT",
+      "dorder": "WHD",
+      "dtype": "INT8",
+      "Dim": {
+        "size": [
+          176,
+          200,
+          8,
+          1
+        ],
+        "pitch": [
+          176,
+          200,
+          8,
+          1
+        ]
+      }
+    },
+    "tensor_7": {
+      "name": "rf_001_CONV_016_ts",
+      "tensor_name": "box_pred2",
+      "dequant_scale_num": 1,
+      "dequant_scale": [
+        0.015625
+      ],
+      "ctype": "DEFAULT",
+      "dorder": "WHD",
+      "dtype": "INT8",
+      "Dim": {
+        "size": [
+          176,
+          200,
+          14,
+          1
+        ],
+        "pitch": [
+          176,
+          200,
+          14,
+          1
+        ]
+      }
+    },
+    "tensor_8": {
+      "name": "rf_002_CONV_005_ts",
+      "tensor_name": "dir_pred2",
+      "dequant_scale_num": 1,
+      "dequant_scale": [
+        0.03125
+      ],
+      "ctype": "DEFAULT",
+      "dorder": "WHD",
+      "dtype": "INT8",
+      "Dim": {
+        "size": [
+          176,
+          200,
+          4,
+          1
+        ],
+        "pitch": [
+          176,
+          200,
+          4,
+          1
+        ]
+      }
+    },
+    "tensor_9": {
+      "name": "rf_002_CONV_006_ts",
+      "tensor_name": "cls_pred3",
+      "dequant_scale_num": 1,
+      "dequant_scale": [
+        0.125
+      ],
+      "ctype": "DEFAULT",
+      "dorder": "WHD",
+      "dtype": "INT8",
+      "Dim": {
+        "size": [
+          176,
+          200,
+          8,
+          1
+        ],
+        "pitch": [
+          176,
+          200,
+          8,
+          1
+        ]
+      }
+    },
+    "tensor_10": {
+      "name": "rf_002_CONV_007_ts",
+      "tensor_name": "box_pred3",
+      "dequant_scale_num": 1,
+      "dequant_scale": [
+        0.015625
+      ],
+      "ctype": "DEFAULT",
+      "dorder": "WHD",
+      "dtype": "INT8",
+      "Dim": {
+        "size": [
+          176,
+          200,
+          14,
+          1
+        ],
+        "pitch": [
+          176,
+          200,
+          14,
+          1
+        ]
+      }
+    },
+    "tensor_11": {
+      "name": "rf_002_CONV_008_ts",
+      "tensor_name": "dir_pred3",
+      "dequant_scale_num": 1,
+      "dequant_scale": [
+        0.03125
+      ],
+      "ctype": "DEFAULT",
+      "dorder": "WHD",
+      "dtype": "INT8",
+      "Dim": {
+        "size": [
+          176,
+          200,
+          4,
+          1
+        ],
+        "pitch": [
+          176,
+          200,
+          4,
+          1
+        ]
+      }
+    }
+  },
+  "activation": {
+    "size": 13824000
+  },
+  "weight": {
+    "size": 1348992
+  },
+  "dag": {
+    "size": 65536,
+    "num": 1
+  }
+}
