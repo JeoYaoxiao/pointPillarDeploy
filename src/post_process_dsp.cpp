@@ -217,6 +217,7 @@ PostRetDSP post_process_1_dsp(const vector<vector<float>> &in_boxes,
     {
         center_xy.col(i) = boxes_decoded.col(i);
     }
+    
     MatrixXf dim_wl(keep_size, 2);
     #pragma omp parallel for
     for (int i = 0; i < 2; ++i)

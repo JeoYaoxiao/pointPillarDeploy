@@ -246,6 +246,7 @@ int main(int argc, char **argv)
   uint64_t diff = stop_post - start_post;
 
   cout << "> processor_cpu->post_process_1 cycles = : " << diff << endl;
+#if 0
 
   cout << "output Rst:" << endl;
   std::cout << "post_ret.boxes.rows():" << post_ret.boxes.rows() << std::endl;
@@ -264,8 +265,9 @@ int main(int argc, char **argv)
        << endl;
   cout << post_ret.labels << endl
        << endl;
+#endif // print
 
-#endif
+#endif //CPU
 
 #if 1 // DSP post_process
   printf("\nDSP post_process============================================================\n");
@@ -317,6 +319,7 @@ int main(int argc, char **argv)
 
   cout << "> processor_dsp->post_process_1_dsp cycles = : " << diff_dsp << endl;
 
+#if 0
   cout << "output post_ret_dsp:" << endl;
   std::cout << "post_ret_dsp.boxes.rows():" << post_ret_dsp.boxes.rows()
             << std::endl;
@@ -336,7 +339,9 @@ int main(int argc, char **argv)
        << endl;
   cout << post_ret_dsp.labels << endl
        << endl;
+#endif
 
+  printf("\n============================================================\n");
   printf(
       ">>>PostRet.boxes>>>>>>>>>>>memcmp=%d\n",
       memcmp(post_ret_dsp.boxes.data(), post_ret.boxes.data(), post_ret.boxes.size()));
