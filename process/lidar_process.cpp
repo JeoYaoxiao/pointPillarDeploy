@@ -202,7 +202,7 @@ namespace lidar_perception
    lidar_inference_->Init(model_path, "front_lidar", INFER_USER_ADDR);
    post_lidar_process_ = std::make_shared<PostLidarProcess>();
    post_lidar_process_->Init();
-   int_buf_. = std::make_shared<>(new char[10*400*352]);
+   // int_buf_. = std::make_shared<>(new char[10*400*352]);
    int_buf_.reset(new signed char[16 * 400 * 352]);
    anchors = std::move(test_anchors());
 #endif

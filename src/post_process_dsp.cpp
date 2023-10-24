@@ -146,8 +146,18 @@ float iou_dsp(const VectorXf &a, const VectorXf &b)
 
 vector<int> nms_dsp(const MatrixXf &boxes_standup, const vector<float> &scores)
 {
+    uint64_t start = 0, stop = 0, diff = 0;
+    uint64_t start_sort = 0, stop_sort = 0, diff_sort = 0;
+    uint64_t start_iou = 0, stop_iou = 0, diff_iou = 0;
+    uint64_t start_for = 0, stop_for = 0, diff_for = 0;
 
+    start = XT_RSR_CCOUNT();
+
+    start_sort = XT_RSR_CCOUNT();
     vector<int> ind = sort_vec_dsp(scores, false);
+    stop_sort = XT_RSR_CCOUNT();
+    diff_sort = stop_sort - start_sort;
+
     int pre_keep = (num_pre_max_size < ind.size()) ? num_pre_max_size : ind.size();
     vector<int> ind_pre_max{ind.begin(), ind.begin() + pre_keep};
 
@@ -157,6 +167,8 @@ vector<int> nms_dsp(const MatrixXf &boxes_standup, const vector<float> &scores)
     {
         boxes_standup_ordered.row(i) = boxes_standup.row(ind[i]);
     }
+
+    start_iou = XT_RSR_CCOUNT();
     MatrixXf ious(pre_keep, pre_keep);
     for (int i = 0; i < pre_keep; ++i)
     {
@@ -165,7 +177,10 @@ vector<int> nms_dsp(const MatrixXf &boxes_standup, const vector<float> &scores)
             ious(i, j) = iou_dsp(boxes_standup_ordered.row(i), boxes_standup_ordered.row(j));
         }
     }
+    stop_iou = XT_RSR_CCOUNT();
+    diff_iou = stop_iou - start_iou;
 
+    start_for = XT_RSR_CCOUNT();
     vector<int> keep(pre_keep, 1);
     vector<int> keep_ids;
     for (int i = 0; i < pre_keep; ++i)
@@ -183,7 +198,15 @@ vector<int> nms_dsp(const MatrixXf &boxes_standup, const vector<float> &scores)
             keep_ids.push_back(ind[i]);
         }
     }
+    stop_for = XT_RSR_CCOUNT();
+    diff_for = stop_for - start_for;
 
+    stop = XT_RSR_CCOUNT();
+    diff = stop - start;
+
+    cout << "> nms_dsp-> sort cycles: "   << diff_sort  << " --percet:" << (float)diff_sort/diff<< endl;
+    cout << "> nms_dsp-> iou cycles: " << diff_iou  << " --percet:" << (float)diff_iou/diff<< endl;
+    cout << "> nms_dsp-> for cycles: " << diff_for  << " --percet:" << (float)diff_for/diff<< endl;
     return keep_ids;
 }
 
