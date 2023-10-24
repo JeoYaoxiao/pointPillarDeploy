@@ -13,8 +13,8 @@
 #include <xtensa/tie/xt_ivp32.h>
 #include <xtensa/tie/xt_ivpn.h>
 
-#define BST_CPU 1
-#define BST_DSP 1
+#define BST_CPU 0
+#define BST_DSP 0
 
 using namespace std;
 using namespace Eigen;

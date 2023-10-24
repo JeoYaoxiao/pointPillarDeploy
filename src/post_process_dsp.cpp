@@ -7,7 +7,6 @@ PostRetDSP::PostRetDSP(PostRetDSP &&other) noexcept
     scores = std::move(other.scores);
     labels = std::move(other.labels);
 }
-#if 1
 
 MatrixXf decode_dsp(const MatrixXf &boxes, const MatrixXf &anchors)
 {
@@ -130,12 +129,16 @@ vector<int> sort_vec_dsp(const vector<float> &scores, bool ascending = true)
 float iou_dsp(const VectorXf &a, const VectorXf &b)
 {
     float left = max(a[0], b[0]);
-    float right = min(a[2], b[2]);
     float top = max(a[1], b[1]);
+
+    float right = min(a[2], b[2]);
     float bottom = min(a[3], b[3]);
+
     float width = max((right - left + 1), float(0));
     float height = max((bottom - top + 1), float(0));
+
     float interS = width * height;
+
     float Sa = (a[2] - a[0] + 1) * (a[3] - a[1] + 1);
     float Sb = (b[2] - b[0] + 1) * (b[3] - b[1] + 1);
     return interS / (Sa + Sb - interS);
@@ -183,7 +186,7 @@ vector<int> nms_dsp(const MatrixXf &boxes_standup, const vector<float> &scores)
 
     return keep_ids;
 }
-#endif
+
 PostRetDSP post_process_1_dsp(const vector<vector<float>> &in_boxes,
                        const vector<float> &in_scores,
                        const vector<int> &in_cls,
@@ -191,6 +194,15 @@ PostRetDSP post_process_1_dsp(const vector<vector<float>> &in_boxes,
                        const vector<int> &in_keep_ids,
                        const MatrixXf &in_anchors)
 {
+    // timer add by xiaoyao
+    uint64_t start = 0, stop = 0, diff = 0;
+    uint64_t start_decode = 0, stop_decode = 0, diff_decode = 0;
+    uint64_t start_box2d = 0, stop_box2d = 0, diff_box2d = 0;
+    uint64_t start_2d = 0, stop_2d = 0, diff_2d = 0;
+    uint64_t start_nms = 0, stop_nms = 0, diff_nms = 0;
+    uint64_t start_for = 0, stop_for = 0, diff_for = 0;
+
+    start = XT_RSR_CCOUNT();
     int keep_size = in_boxes.size();
     int num_box_features = in_boxes[0].size();
     MatrixXf boxes(keep_size, num_box_features);
@@ -209,7 +221,10 @@ PostRetDSP post_process_1_dsp(const vector<vector<float>> &in_boxes,
             boxes(i, j) = in_boxes[i][j];
         }
     }
+    start_decode = XT_RSR_CCOUNT();
     MatrixXf boxes_decoded = decode_dsp(boxes, anchors);
+    stop_decode = XT_RSR_CCOUNT();
+    diff_decode = stop_decode - start_decode;
 
     MatrixXf center_xy(keep_size, 2);
     #pragma omp parallel for
@@ -217,7 +232,6 @@ PostRetDSP post_process_1_dsp(const vector<vector<float>> &in_boxes,
     {
         center_xy.col(i) = boxes_decoded.col(i);
     }
-    
     MatrixXf dim_wl(keep_size, 2);
     #pragma omp parallel for
     for (int i = 0; i < 2; ++i)
@@ -227,16 +241,29 @@ PostRetDSP post_process_1_dsp(const vector<vector<float>> &in_boxes,
     MatrixXf rot(keep_size, 1);
     rot.col(0) = boxes_decoded.col(6);
 
+    start_box2d = XT_RSR_CCOUNT();
     vector<MatrixXf> corner = std::move(center_to_corner_box2d_dsp(center_xy, dim_wl, rot));
-    MatrixXf standup = std::move(corner_to_standup_2d_dsp(corner));
+    stop_box2d = XT_RSR_CCOUNT();
+    diff_box2d = stop_box2d - start_box2d;
 
+    start_2d = XT_RSR_CCOUNT();
+    MatrixXf standup = std::move(corner_to_standup_2d_dsp(corner));
+    stop_2d = XT_RSR_CCOUNT();
+    diff_2d = stop_2d - start_2d;
+
+    start_nms = XT_RSR_CCOUNT();
     vector<int> keep_ids = std::move(nms_dsp(standup, in_scores));
+    stop_nms = XT_RSR_CCOUNT();
+    diff_nms = stop_nms - start_nms;
+
     int num_nmsed = keep_ids.size();
 
     MatrixXf boxes_nmsed(num_nmsed, num_box_features);
     MatrixXi labels_nmsed(num_nmsed, 1);
     MatrixXf scores_nmsed(num_nmsed, 1);
     MatrixXi labels_dir_nmsed(num_nmsed, 1);
+
+    start_for = XT_RSR_CCOUNT();
     #pragma omp parallel for
     for (int i = 0; i < num_nmsed; ++i)
     {
@@ -253,8 +280,19 @@ PostRetDSP post_process_1_dsp(const vector<vector<float>> &in_boxes,
         int opp = (boxes_nmsed(i, 6) > 0) ^ bool(labels_dir_nmsed(i, 0));
         boxes_nmsed(i, 6) += opp * M_PI; // if 1 then pi; if 0 then 0
     }
+    stop_for = XT_RSR_CCOUNT();
+    diff_for = stop_for - start_for;
 
     PostRetDSP post_ret(std::move(boxes_nmsed), std::move(scores_nmsed), std::move(labels_nmsed));
+    stop = XT_RSR_CCOUNT();
+    diff = stop - start;
+    cout << "> processor_dsp->post_process_1_dsp cycles = : " << diff << endl;
+    cout << "> processor_dsp->post_process_1_dsp decode cycles = : " << diff_decode << " --percet:" << (float)diff_decode/diff << endl;
+    cout << "> processor_dsp->post_process_1_dsp box2d cycles = : " << diff_box2d << " --percet:" << (float)diff_box2d/diff << endl;
+    cout << "> processor_dsp->post_process_1_dsp 2d cycles = : " << diff_2d  << " --percet:" << (float)diff_2d/diff<< endl;
+    cout << "> processor_dsp->post_process_1_dsp nms cycles = : " << diff_nms  << " --percet:" << (float)diff_nms/diff<< endl;
+    cout << "> processor_dsp->post_process_1_dsp for-loop cycles = : " << diff_for  << " --percet:" << (float)diff_for/diff<< endl;
+
     return post_ret;
 }
 

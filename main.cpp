@@ -23,7 +23,6 @@ int main(int argc, char **argv)
   int run_mode = 1;
   int run_type = -1;
   MAYBE_UNUSED(uint64_t start = 0LL, stop = 0LL);
-  MAYBE_UNUSED(uint64_t start_post = 0LL, stop_post = 0LL);
   MAYBE_UNUSED(uint64_t updatestart = 0LL, updatestop = 0LL);
 
 #if BST_CPU
@@ -197,7 +196,6 @@ int main(int argc, char **argv)
 #endif // BST_DSP
 
 #if 1 // CPU post_process
-
   printf("\nCPU post_process============================================================\n");
   std::vector<int> keep_ids;
   keep_ids.reserve(16);
@@ -237,15 +235,9 @@ int main(int argc, char **argv)
     }
   }
   // 后处理
-  TIME_STAMP(start_post);
   PostRet post_ret = std::move(
       post_process_1(boxes, scores, cls_argmax, dir_cls_argmax, keep_ids,
                      anchors_in));
-  TIME_STAMP(stop_post);
-
-  uint64_t diff = stop_post - start_post;
-
-  cout << "> processor_cpu->post_process_1 cycles = : " << diff << endl;
 #if 0
 
   cout << "output Rst:" << endl;
@@ -309,15 +301,9 @@ int main(int argc, char **argv)
     }
   }
   // 后处理
-  TIME_STAMP(start_post);
   PostRetDSP post_ret_dsp = std::move(
       post_process_1_dsp(boxes_dsp, scores_dsp, cls_argmax_dsp, dir_cls_argmax_dsp, keep_ids_dsp,
                          anchors_in_dsp));
-  TIME_STAMP(stop_post);
-
-  uint64_t diff_dsp = stop_post - start_post;
-
-  cout << "> processor_dsp->post_process_1_dsp cycles = : " << diff_dsp << endl;
 
 #if 0
   cout << "output post_ret_dsp:" << endl;
