@@ -44,7 +44,7 @@ int main(int argc, char **argv)
     file.seekg(0, std::ios::end);
     int end = file.tellg();
     size_t len = end - begin;
-    printf("len:%d\n", len);
+    // printf("len:%d\n", len);
     size_t data_len = len / sizeof(float);
 
     size_t cols = 4;
@@ -128,7 +128,7 @@ int main(int argc, char **argv)
     file.seekg(0, std::ios::end);
     int end = file.tellg();
     size_t len = end - begin;
-    printf("len:%d\n", len);
+    // printf("len:%d\n", len);
     size_t data_len = len / sizeof(float);
 
     size_t cols = 4;

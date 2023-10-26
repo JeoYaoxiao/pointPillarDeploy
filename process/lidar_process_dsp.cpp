@@ -214,6 +214,7 @@ namespace lidar_perception
   void LidarProcessDSP::Update(void *ptr, int size)
   {
     //timer
+	MAYBE_UNUSED(uint64_t npy_cpu_start = 0LL, npy_cpu_stop = 0LL);
     MAYBE_UNUSED(uint64_t npy_dsp_start = 0LL, npy_dsp_stop = 0LL);
     MAYBE_UNUSED(uint64_t memcpystart = 0LL, memcpystop = 0LL);
     MAYBE_UNUSED(uint64_t RtCloudPreprocessstart = 0LL, RtCloudPreprocessstop = 0LL);
@@ -263,6 +264,7 @@ namespace lidar_perception
     TIME_STAMP(extractstart);
     vector<float> batch_image = ppn.extract(piv);
     vector<float> batch_image_input(batch_image);
+    vector<float> batch_image_dsp(batch_image);
     TIME_STAMP(extractstop);
     this->time_extract  = extractstop - extractstart;
     
@@ -277,7 +279,7 @@ namespace lidar_perception
 
     float *p_npy_data_temp = &batch_image[0];
     this->npy_data_input = &batch_image_input[0];
-#if 1
+#if 1 //CPU
 // signed char *p_npy_data = int_buf_.get();
     signed char *p_npy_data = new signed char[16 * 400 * 352];
     memset(p_npy_data, 0 , 16 * 400 * 352);
@@ -311,9 +313,69 @@ namespace lidar_perception
         }
       }
       TIME_STAMP(npy_dsp_stop);
-      printf("> npy dsp cycles = %llu \n", npy_dsp_stop - npy_dsp_start);
+      printf("> npy cpu cycles = %llu \n", npy_dsp_stop - npy_dsp_start);
       this->npy_data = p_npy_data;
     }
+
+#endif //quantification
+
+
+#if 1 //DSP
+// signed char *p_npy_data = int_buf_.get();
+    float *p_npy_data_temp_dsp = &batch_image_dsp[0];
+    signed char *p_npy_data_dsp = new signed char[16 * 400 * 352];
+
+    printf(">>>input--> p_npy_data_temp: DSP vs CPU>>>>>>>>>>>memcmp=%d\n",
+           memcmp(p_npy_data_temp_dsp, p_npy_data_temp,
+                  16 * 400 * 352));
+
+    memset(p_npy_data_dsp, 0 , 16 * 400 * 352);
+    // NCHW-->NHWC, CH:10-->16 padding
+    {
+      int s1 = input_h_ * input_w_; // 352 * 400 input_w_ = 352 input_h_ = 400
+      int s2 = input_w_ * input_c_; // 400 * 16 pre_output_c_ = 10; input_c_ = 16
+
+      float *offset_l1_w = 0;
+      signed char *offset_l1_c = 0;
+
+      float *offset_l2_w = 0;
+      signed char *offset_l2_c = 0;
+
+      TIME_STAMP(npy_dsp_start);
+#pragma omp parallel for
+      for (int i = 0; i < input_h_; i++) {
+        offset_l1_w = i * input_w_ + p_npy_data_temp_dsp;
+        offset_l1_c = p_npy_data_dsp + i * s2;
+
+        for (int m = 0; m < input_w_; m++) {
+          offset_l2_w = offset_l1_w + m;
+          offset_l2_c = m * input_c_ + offset_l1_c;
+
+          for (int c = 0; c < pre_output_c_; c++) {
+            float tmp = *(c * s1 + offset_l2_w) * 2.0;
+            tmp = std::floor(tmp);
+            tmp = MIN(MAX(tmp, -128), 127);
+            *(offset_l2_c + c) = (signed char)tmp;
+          }
+        }
+      }
+      TIME_STAMP(npy_dsp_stop);
+      printf("> npy dsp cycles = %llu \n", npy_dsp_stop - npy_dsp_start);
+    }
+
+    printf(">>>output--> npy_data: DSP vs CPU>>>>>>>>>>>memcmp=%d\n",
+           memcmp(p_npy_data_dsp, p_npy_data, 16 * 400 * 352));
+
+    int sum = 0;
+    for(int i = 0; i < 16 * 400 * 352; i++) {
+      int cpu = (int)*(p_npy_data + i);
+      int dsp = (int)*(p_npy_data_dsp + i);
+      if (cpu != dsp)
+    	 std::cout << " cpu: " << cpu << " dsp: " << dsp << endl;
+      if (cpu != 0)
+    	  sum++;
+    }
+   std::cout << "zero percent:" <<   (float)sum / 16 * 400 * 352 << endl;
 
 #endif //quantification
 
