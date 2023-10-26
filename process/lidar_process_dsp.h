@@ -43,6 +43,7 @@ class LidarProcessDSP {
   uint64_t time_total3 = 0;
   uint64_t time_total4 = 0;
   uint64_t time_total5 = 0;
+
  private:
   std::shared_ptr<LidarInference> lidar_inference_ = nullptr;
   std::shared_ptr<PostLidarProcess> post_lidar_process_ = nullptr;
@@ -54,9 +55,10 @@ class LidarProcessDSP {
   int input_c_ = 16;
   int pre_output_c_ = 10;
   MatrixXf anchors;
-
-
   int cnt = 0;
+
+public:
+  signed char *npy_data = nullptr; // use to compare 
 };
 
 }

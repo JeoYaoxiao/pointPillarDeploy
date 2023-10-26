@@ -69,7 +69,9 @@ int main(int argc, char **argv)
     }
     TIME_STAMP(stop);
 
+#if PRINT_PRO
     printf("> processor_->Init cycles = %llu \n", (stop - start));
+#endif
 
     // uint64_t time_total0 = 0;
     // auto t00 = std::chrono::high_resolution_clock::now();
@@ -81,8 +83,10 @@ int main(int argc, char **argv)
     }
     TIME_STAMP(updatestop);
 
+#if PRINT_PRO
     processor_->time_update = updatestop - updatestart;
     printf("> processor_->Update cycles = %llu \n", processor_->time_update);
+#endif
 
 #if 0 
     auto t10 = std::chrono::high_resolution_clock::now();
@@ -173,6 +177,10 @@ int main(int argc, char **argv)
     printf(">>>cloud_data_dsp>>>>>>>>>>>memcmp=%d\n",
            memcmp(cloud_data.data(), cloud_data_dsp.data(),
                   cloud_data.size()));
+    printf(">>>cloud_data_dsp npy_data>>>>>>>>>>>memcmp=%d\n",
+           memcmp(processor_dsp->npy_data, processor_dsp->npy_data,
+                  16 * 400 * 352));
+
 #endif
 
 #if 0
