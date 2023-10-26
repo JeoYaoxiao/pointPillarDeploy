@@ -261,6 +261,7 @@ namespace lidar_perception
 
     TIME_STAMP(extractstart);
     vector<float> batch_image = ppn.extract(piv);
+    vector<float> batch_image_input(batch_image);
     TIME_STAMP(extractstop);
     this->time_extract  = extractstop - extractstart;
     
@@ -274,10 +275,11 @@ namespace lidar_perception
 #endif
 
     float *p_npy_data_temp = &batch_image[0];
-
+    this->npy_data_input = &batch_image_input[0];
 #if 1
     // signed char *p_npy_data = (signed char *)int_buf_.get();
     signed char *p_npy_data = new signed char[16 * 400 * 352];
+    memset(p_npy_data, 0 , 16 * 400 * 352);
     // NCHW-->NHWC, CH:10-->16 padding
     {
       int s1 = input_h_ * input_w_;
@@ -309,8 +311,8 @@ namespace lidar_perception
       }
       TIME_STAMP(npy_stop);
       printf("> npy dsp cycles = %llu \n", npy_stop - npy_start);
-      this->npy_data = p_npy_data;
     }
+    this->npy_data = p_npy_data;
 #endif //quantification
 
 #if 0

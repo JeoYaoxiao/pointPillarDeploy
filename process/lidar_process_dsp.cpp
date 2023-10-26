@@ -262,6 +262,7 @@ namespace lidar_perception
 
     TIME_STAMP(extractstart);
     vector<float> batch_image = ppn.extract(piv);
+    vector<float> batch_image_input(batch_image);
     TIME_STAMP(extractstop);
     this->time_extract  = extractstop - extractstart;
     
@@ -275,15 +276,15 @@ namespace lidar_perception
 #endif
 
     float *p_npy_data_temp = &batch_image[0];
-
+    this->npy_data_input = &batch_image_input[0];
 #if 1
 // signed char *p_npy_data = int_buf_.get();
     signed char *p_npy_data = new signed char[16 * 400 * 352];
+    memset(p_npy_data, 0 , 16 * 400 * 352);
     // NCHW-->NHWC, CH:10-->16 padding
     {
       int s1 = input_h_ * input_w_; // 352 * 400 input_w_ = 352 input_h_ = 400
-      int s2 =
-          input_w_ * input_c_; // 400 * 16 pre_output_c_ = 10; input_c_ = 16
+      int s2 = input_w_ * input_c_; // 400 * 16 pre_output_c_ = 10; input_c_ = 16
 
       float *offset_l1_w = 0;
       signed char *offset_l1_c = 0;

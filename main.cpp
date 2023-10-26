@@ -103,9 +103,7 @@ int main(int argc, char **argv)
 
     in.close();
   }
-  processor_->Release();
-  delete processor_;
-  processor_ = nullptr;
+
 #endif // BST_CPU
 
   //=============================================================
@@ -114,8 +112,7 @@ int main(int argc, char **argv)
 #if BST_DSP
 
   printf("\nDSP============================================================\n");
-  printf("XCHAL_IVPN_SIMD_WIDTH-------------------------------------------%d\n",
-         XCHAL_IVPN_SIMD_WIDTH);
+  printf("XCHAL_IVPN_SIMD_WIDTH--------------------------------%d\n",  XCHAL_IVPN_SIMD_WIDTH);
   TIME_STAMP(start);
   processor_dsp = new lidar_perception::LidarProcessDSP();
   processor_dsp->Init("../model/lidar_front");
@@ -174,11 +171,14 @@ int main(int argc, char **argv)
            (updatestop - updatestart));
 #endif
 #if BST_DSP && BST_CPU
-    printf(">>>cloud_data_dsp>>>>>>>>>>>memcmp=%d\n",
-           memcmp(cloud_data.data(), cloud_data_dsp.data(),
-                  cloud_data.size()));
-    printf(">>>cloud_data_dsp npy_data>>>>>>>>>>>memcmp=%d\n",
-           memcmp(processor_dsp->npy_data, processor_dsp->npy_data,
+    // printf(">>>cloud_data_dsp>>>>>>>>>>>memcmp=%d\n",
+    //        memcmp(cloud_data.data(), cloud_data_dsp.data(),
+    //               cloud_data.size()));
+    printf(">>>npy_data_input: DSP  vs CPU>>>>>>>>>>>memcmp=%d\n",
+            memcmp(processor_dsp->npy_data_input, processor_->npy_data_input,
+                   16 * 400 * 352));
+    printf(">>> npy_data: DSP vs CPU>>>>>>>>>>>memcmp=%d\n",
+           memcmp(processor_dsp->npy_data, processor_->npy_data,
                   16 * 400 * 352));
 
 #endif
@@ -199,10 +199,16 @@ int main(int argc, char **argv)
     //
     in.close();
   }
+#if BST_CPU 
+  processor_->Release();
+  delete processor_;
+  processor_ = nullptr;
+#endif
 
   processor_dsp->Release();
   delete processor_dsp;
   processor_dsp = nullptr;
+
 #endif // BST_DSP
 
 #if 0 // CPU post_process

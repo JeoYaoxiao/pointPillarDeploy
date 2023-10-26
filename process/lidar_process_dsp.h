@@ -58,6 +58,7 @@ class LidarProcessDSP {
   int cnt = 0;
 
 public:
+  float *npy_data_input = nullptr; 
   signed char *npy_data = nullptr; // use to compare 
 };
 
