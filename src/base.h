@@ -14,8 +14,8 @@
 #include <xtensa/tie/xt_ivpn.h>
 
 #define BST_CPU 0
-#define BST_DSP 0
-
+#define BST_DSP 1
+#define PRINT_PRO 0
 using namespace std;
 using namespace Eigen;
 

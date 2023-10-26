@@ -152,8 +152,9 @@ int main(int argc, char **argv)
     }
 
     TIME_STAMP(stop);
+#if PRINT_PRO
     printf("> processor_dsp->Init cycles = %llu \n", (stop - start));
-
+#endif
     uint64_t time_total0 = 0;
     auto t00 = std::chrono::high_resolution_clock::now();
 
@@ -164,9 +165,10 @@ int main(int argc, char **argv)
     }
     TIME_STAMP(updatestop);
 
+#if PRINT_PRO
     printf("> processor_dsp->Update cycles = %llu \n",
            (updatestop - updatestart));
-
+#endif
 #if BST_DSP && BST_CPU
     printf(">>>cloud_data_dsp>>>>>>>>>>>memcmp=%d\n",
            memcmp(cloud_data.data(), cloud_data_dsp.data(),
@@ -195,7 +197,7 @@ int main(int argc, char **argv)
   processor_dsp = nullptr;
 #endif // BST_DSP
 
-#if 1 // CPU post_process
+#if 0 // CPU post_process
   printf("\nCPU post_process============================================================\n");
   std::vector<int> keep_ids;
   keep_ids.reserve(16);
@@ -261,7 +263,7 @@ int main(int argc, char **argv)
 
 #endif //CPU
 
-#if 1 // DSP post_process
+#if 0 // DSP post_process
   printf("\nDSP post_process============================================================\n");
   std::vector<int> keep_ids_dsp;
   keep_ids_dsp.reserve(16);

@@ -213,8 +213,10 @@ namespace lidar_perception
 
   void LidarProcessDSP::Update(void *ptr, int size)
   {
-	 //timer
+	  //timer
     MAYBE_UNUSED(uint64_t memcpystart = 0LL, memcpystop = 0LL);
+    MAYBE_UNUSED(uint64_t npy_start = 0LL, npy_stop = 0LL);
+    MAYBE_UNUSED(uint64_t npy_dsp_start = 0LL, npy_dsp_stop = 0LL);
     MAYBE_UNUSED(uint64_t RtCloudPreprocessstart = 0LL, RtCloudPreprocessstop = 0LL);
     MAYBE_UNUSED(uint64_t points_to_voxelsstart = 0LL, points_to_voxelsstop = 0LL);
     MAYBE_UNUSED(uint64_t extractstart = 0LL, extractstop = 0LL);
@@ -223,7 +225,7 @@ namespace lidar_perception
     MatrixXf res(4, size);
     auto stride = sizeof(PrePointXYZI);
 
-TIME_STAMP(memcpystart);
+    TIME_STAMP(memcpystart);
 
     /*memcpy*/
     for (int i = 0; i < size; i++)
@@ -241,10 +243,12 @@ TIME_STAMP(memcpystart);
       memcpy((char *)res.data() + i * stride + 12, &pre_point.intensity, 4);
     }
 
-TIME_STAMP(memcpystop);
-this->time_memcpy = memcpystop - memcpystart;
+    TIME_STAMP(memcpystop);
+    this->time_memcpy = memcpystop - memcpystart;
 
-printf("> processor_dsp->Update >> memcpy cycles = %llu \n",this->time_memcpy);
+#if PRINT_PRO
+    printf("> processor_dsp->Update >> memcpy cycles = %llu \n", this->time_memcpy);
+#endif
     /*RtCloudPreprocess*/
     TIME_STAMP(RtCloudPreprocessstart);
     auto points = std::move(RtCloudPreprocessDSP(res, true));
@@ -260,6 +264,7 @@ printf("> processor_dsp->Update >> memcpy cycles = %llu \n",this->time_memcpy);
 
     TIME_STAMP(extractstart);
     vector<float> batch_image = ppn.extract(piv);
+    vector<float> batch_image_dsp(batch_image);
     TIME_STAMP(extractstop);
     this->time_extract  = extractstop - extractstart;
     
@@ -267,10 +272,108 @@ printf("> processor_dsp->Update >> memcpy cycles = %llu \n",this->time_memcpy);
     TIME_STAMP(RtCloudPreprocessstop);
 
     this->time_RtCloudPreprocesss = RtCloudPreprocessstop - RtCloudPreprocessstart;
+#if PRINT_PRO
     printf("> processor_dsp->Update >> points_to_voxels cycles = %llu \n",(this->time_points_to_voxels));
     printf("> processor_dsp->Update >> voxel.time_extract cycles = %llu \n",(this->time_extract));
     printf("> processor_dsp->Update >> RtCloudPreprocess cycles = %llu \n",(this->time_RtCloudPreprocesss));
+#endif
 float *p_npy_data_temp = &batch_image[0];
+float *p_npy_data_temp_dsp = &batch_image_dsp[0];
+cout <<"batch_image.size()" << batch_image.size() << endl;
+printf(">>>p_npy_data_temp vs p_npy_data_temp_dsp>>>>>>>>>>>memcmp=%d\n",
+    memcmp(p_npy_data_temp, p_npy_data_temp_dsp, 16 * 400 * 352));
+
+#if 1  // CPU add by yaoxiao
+//signed char *p_npy_data = int_buf_.get();
+// signed char *p_npy_data = new signed char[input_c_ * input_h_ * input_w_];
+signed char *p_npy_data = new signed char[16 * 400 * 352];
+// NCHW-->NHWC, CH:10-->16 padding
+{
+  int s1 = input_h_ * input_w_; // 352 * 400
+  int s2 = input_w_ * input_c_; // 400 * 16
+
+  float *offset_l1_w = 0;
+  signed char *offset_l1_c = 0;
+
+  float *offset_l2_w = 0;
+  signed char *offset_l2_c = 0;
+
+  // int input_w_ = 352;
+  // int input_h_ = 400;
+  // int input_c_ = 16;
+  // int pre_output_c_ = 10;
+ TIME_STAMP(npy_start);
+#pragma omp parallel for
+  for (int i = 0; i < input_h_; i++) {
+    offset_l1_w = i * input_w_ + p_npy_data_temp;
+    offset_l1_c = p_npy_data + i * s2;
+
+    for (int m = 0; m < input_w_; m++) {
+      offset_l2_w = offset_l1_w + m;
+      offset_l2_c = m * input_c_ + offset_l1_c;
+
+      for (int c = 0; c < pre_output_c_; c++) {
+        float tmp = *(c * s1 + offset_l2_w) * 2.0;
+        tmp = std::floor(tmp);
+        tmp = MIN(MAX(tmp, -128), 127);
+        *(offset_l2_c + c) = (signed char)tmp;
+      }
+    }
+  }
+ TIME_STAMP(npy_stop);
+ printf("> npy cycles = %llu \n", npy_stop - npy_start);
+}
+
+#endif //quantification
+
+#if 1  // DSP add by yaoxiao
+//signed char *p_npy_data = int_buf_.get();
+// signed char *p_npy_data = new signed char[input_c_ * input_h_ * input_w_];
+
+signed char *p_npy_data_dsp = new signed char[16 * 400 * 352];
+// NCHW-->NHWC, CH:10-->16 padding
+{
+  int s1 = input_h_ * input_w_; // 352 * 400
+  int s2 = input_w_ * input_c_; // 400 * 16
+
+  float *offset_l1_w = 0;
+  signed char *offset_l1_c = 0;
+
+  float *offset_l2_w = 0;
+  signed char *offset_l2_c = 0;
+
+  // int input_w_ = 352;
+  // int input_h_ = 400;
+  // int input_c_ = 16;
+  // int pre_output_c_ = 10;
+  TIME_STAMP(npy_dsp_start);
+#pragma omp parallel for
+  for (int i = 0; i < input_h_; i++) {
+    offset_l1_w = i * input_w_ + p_npy_data_temp_dsp;
+    offset_l1_c = p_npy_data_dsp + i * s2;
+
+    for (int m = 0; m < input_w_; m++) {
+      offset_l2_w = offset_l1_w + m;
+      offset_l2_c = m * input_c_ + offset_l1_c;
+
+      for (int c = 0; c < pre_output_c_; c++) {
+        float tmp = *(c * s1 + offset_l2_w) * 2.0;
+        tmp = std::floor(tmp);
+        tmp = MIN(MAX(tmp, -128), 127);
+        *(offset_l2_c + c) = (signed char)tmp;
+      }
+    }
+  }
+  TIME_STAMP(npy_dsp_stop);
+  printf("> npy dsp cycles = %llu \n", npy_dsp_stop - npy_dsp_start);
+  this->npy_data = p_npy_data_dsp;
+}
+
+  printf(">>>p_npy_data vs p_npy_data_dsp>>>>>>>>>>>memcmp=%d\n",
+      memcmp(p_npy_data, p_npy_data_dsp, 16 * 400 * 352));
+
+#endif //quantification
+
 #if 0
    signed char *p_npy_data = int_buf_.get();
    // NCHW-->NHWC, CH:10-->16 padding
@@ -301,6 +404,7 @@ float *p_npy_data_temp = &batch_image[0];
        }
      }
    }
+
 
    DataBuffer infer_img_tmp = {0};
    infer_img_tmp.start = int_buf_.get();
@@ -381,7 +485,6 @@ float *p_npy_data_temp = &batch_image[0];
        lidar_p_src.push_back(post_pre);
      }
    }
-
    post_lidar_process_->UpdateV(lidar_v_src, lidar_v_out);
    post_lidar_process_->UpdateP(lidar_p_src, lidar_p_out);
 #endif
