@@ -85,4 +85,15 @@ const float nms_score_threshold = -0.20067069546215122;
 const float nms_iou_threshold = 0.3;
 const int num_pre_max_size = 100;
 
+
+#if defined(__XTENSA__)
+#define _LOCAL_RAM0_  __attribute__((section(".dram0.data")))
+#define _LOCAL_RAM1_  __attribute__((section(".dram1.data")))
+#define _LOCAL_SRAM_  __attribute__((section(".sram.data")))
+#else
+#define _LOCAL_RAM0_
+#define _LOCAL_RAM1_
+#define _LOCAL_SRAM_
+#endif
+
 #endif
