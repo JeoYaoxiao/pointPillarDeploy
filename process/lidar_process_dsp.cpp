@@ -214,10 +214,13 @@ namespace lidar_perception
  float _LOCAL_RAM0_  data_npy_data_input[16 * 352];
  signed char _LOCAL_RAM1_  data_npy_data_output[16 * 352];
 
- float _LOCAL_SRAM_  sa_npy_data_input[16 * 352 * 400];
- signed char _LOCAL_SRAM_  sa_npy_data_output[16 * 352 * 400];
+//  float _LOCAL_RAM0_ tmp_in[16];
+//  signed char _LOCAL_RAM1_ *tmp_out[16];
 
- float _LOCAL_RAM0_  tmp_d_data[2 * 2 * 4];
+  float _LOCAL_SRAM_  sa_npy_data_input[16 * 352 * 400];
+  signed char _LOCAL_SRAM_  sa_npy_data_output[16 * 352 * 400];
+
+  float _LOCAL_RAM0_  tmp_d_data[2 * 2 * 4];
   void LidarProcessDSP::Update(void *ptr, int size)
   {
     //timer
@@ -292,8 +295,8 @@ namespace lidar_perception
 
     // NCHW-->NHWC, CH:10-->16 padding
     {
-      int s1 = input_h_ * input_w_; // 352 * 400 input_w_ = 352 input_h_ = 400
-      int s2 = input_w_ * input_c_; // 400 * 16 pre_output_c_ = 10; input_c_ = 16
+      int s1 = input_h_ * input_w_; // 352 * 400 input_w_ = 352 input_h_ = 400  140800
+      int s2 = input_w_ * input_c_; // 352 * 16 pre_output_c_ = 10; input_c_ = 16  5632
 
       float *offset_l1_w = 0;
       signed char *offset_l1_c = 0;
@@ -338,9 +341,10 @@ namespace lidar_perception
 
     // NCHW-->NHWC, CH:10-->16 padding
     {
-      int s1 = input_h_ * input_w_; // 352 * 400 input_w_ = 352 input_h_ = 400
-      int s2 =
-          input_w_ * input_c_; // 400 * 16 pre_output_c_ = 10; input_c_ = 16
+      // 352 * 400   input_w_ = 352 input_h_ = 400
+//      int s1 = input_h_ * input_w_; //140800
+      // 400 * 16    pre_output_c_ = 10  input_c_ = 16
+//      int s2 =  input_w_ * input_c_; // 5632
 
       float *offset_l1_w = 0;
       signed char *offset_l1_c = 0;
@@ -348,14 +352,9 @@ namespace lidar_perception
       float *offset_l2_w = 0;
       signed char *offset_l2_c = 0;
 
-      //      int arr_load_idx[16] = { 0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40,
-      //      44, 48, 52, 56, 60 }; xb_vecN_2x32Uv vec_load_idx =
-      //      IVP_LVN_2X32U_I((xb_vecN_2x32Uv*)arr_load_idx, 0); xb_vecN_2xf32
-      //      vec_py = IVP_GATHERN_2XF32((xtfloat*)(p_npy_data_temp_dsp),
-      //      vec_load_idx);
-      xb_vecN_2xf32 *vec_offset_l1_w;
-      xb_vecN_2xf32 *restrict result;
-      xb_vecN_2xf32 vec_tmp;
+//      int arr_load_idx[16] = { 0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60 };
+//      xb_vecN_2x32Uv vec_load_idx = IVP_LVN_2X32U_I((xb_vecN_2x32Uv*)arr_load_idx, 0);
+//      xb_vecN_2xf32 vec_py = IVP_GATHERN_2XF32((xtfloat*)(p_npy_data_temp_dsp), vec_load_idx);
 
       TIME_STAMP(npy_dsp_start);
 #if 0 // compare
@@ -378,57 +377,46 @@ namespace lidar_perception
       }
 #else
 
-      xb_vecN_2xf32 *p_ret;
+      xb_vecN_2xf32 *p_in;
+      xb_vecNx8 *p_out;
+      float tmp_in[16];
+      for (int i = 0; i < 400; i++) { // 400
+        offset_l1_w = i * 352 + p_npy_data_temp_dsp;
+        offset_l1_c = p_npy_data_dsp + i *  5632;
 
-      for (int i = 0; i < input_h_; i++) { // 400
-        offset_l1_w = i * input_w_ + p_npy_data_temp_dsp;
-        offset_l1_c = p_npy_data_dsp + i * s2;
-
-        for (int m = 0; m < input_w_; m++) { // w=352
+        for (int m = 0; m < 352; m++) { // w=352
           offset_l2_w = offset_l1_w + m;
-          offset_l2_c = m * input_c_ + offset_l1_c; // c=16
-
-          //          for (int  idx = 0; idx < pre_output_c_; idx++) {//
-          //          output=10
-          //            float tmp = *(idx * s1 + offset_l2_w) * 2.0;
-          //            tmp = std::floor(tmp);
-          //            tmp = MIN(MAX(std::floor(tmp), -128), 127);
-          //            *(offset_l2_c + idx) = (signed char)tmp;
-          //
-          //          }
-          //
-          float tmp_in[16];
-          signed char *tmp_out[16];
-          for (int idx = 0; idx < pre_output_c_; idx++) {
-            tmp_in[idx] = *(idx * s1 + offset_l2_w) * 2.0;
-            tmp_out[idx] = offset_l2_c + idx;
+          offset_l2_c = m * 16 + offset_l1_c; // c=16
+#if 0
+           for (int idx = 0; idx < 10; idx++) { //
+             float tmp = *(idx * 400 * 352 + offset_l2_w) * 2.0;
+             tmp = std::floor(tmp);
+             tmp = MIN(MAX(std::floor(tmp), -128), 127);
+             *(offset_l2_c + idx) = (signed char)tmp;
+           }
+#else
+          for (int idx = 0; idx < 10; idx++) {
+            // tmp_in[idx] = *(idx * s1 + offset_l2_w) * 2.0;
+            tmp_in[idx] = *(idx * 400 * 352 + offset_l2_w);
           }
-          //          for (int  idx = 0; idx < pre_output_c_; idx++) {
-          //        	  float tmp = std::floor(tmp_in[idx]);
-          //        	  tmp = MIN(MAX(tmp, -128), 127);
-          //        	  // *(offset_l2_c + idx) = (signed char)tmp;
-          //        	  *tmp_out[idx] = (signed char)tmp;
-          //        	  //*(offset_l2_c + idx) = (signed char)tmp;
-          //          }
-          xb_vecN_2xf32 *p_in = (xb_vecN_2xf32 *)(tmp_in);
-          xb_vecNx8 *out_data = (xb_vecNx8 *)(tmp_out);
-          //        *p_in = IVP_FIFLOORN_2XF32(*p_in);
+          // for (int idx = 0; idx < pre_output_c_; idx++) {
+          //   float tmp = std::floor(tmp_in[idx]);
+          //   tmp = MIN(MAX(tmp, -128), 127);
+          //   // *(offset_l2_c + idx) = (signed char)tmp;
+          //   *tmp_out[idx] = (signed char)tmp;
+          //   //*(offset_l2_c + idx) = (signed char)tmp;
+          // }
+          p_in = (xb_vecN_2xf32 *)(tmp_in);
+          IVP_MULN_2XF32T(*p_in, *p_in, 2, IVP_LTRSN_2(10));
           IVP_FIFLOORN_2XF32T(*p_in, *p_in, IVP_LTRSN_2(10));
-
-          // *p_in = IVP_MINN_2XF32(IVP_MAXN_2XF32(*p_in,-128), 127);
           IVP_MAXN_2XF32T(*p_in, *p_in, -128, IVP_LTRSN_2(10));
           IVP_MINN_2XF32T(*p_in, *p_in, 127, IVP_LTRSN_2(10));
 
-          //         *out_data = (xb_vecNx8 *) p_max;
-          //          vec_tmp = IVP_LVN_2XF32_I(p_tmp, 0);
-
-          //          xb_vecN_2xf32 *p_tmp = (xb_vecN_2xf32 *)(s1 +
-          //          offset_l2_w); vec_tmp = IVP_LVN_2XF32_I(p_tmp, 0);
-          //          IVP_FIFLOORN_2XF32(vec_tmp, vec_tmp);
-
           for (int idx = 0; idx < pre_output_c_; idx++) {
-            *tmp_out[idx] = (signed char)tmp_in[idx];
+            *(offset_l2_c + idx) = (signed char)tmp_in[idx];
           }
+#endif
+
         }
       }
 
@@ -444,8 +432,8 @@ namespace lidar_perception
     for(int i = 0; i < 16 * 400 * 352; i++) {
       int cpu = (int)*(p_npy_data + i);
       int dsp = (int)*(p_npy_data_dsp + i);
-//      if (cpu != dsp)
-//    	 std::cout << " cpu: " << cpu << " dsp: " << dsp << endl;
+      if (cpu != dsp)
+    	 std::cout << " cpu: " << cpu << " dsp: " << dsp << endl;
       if (cpu != 0)
     	  sum++;
     }
