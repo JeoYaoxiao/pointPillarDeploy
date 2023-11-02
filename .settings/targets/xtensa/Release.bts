@@ -22,10 +22,6 @@
                 </SingleFlagMapOptions>
                 <FlagValueMapOptions>
                     <FlagValueMapEntry>
-                        <key>Debug</key>
-                        <value level="-3" flag="-g" use="true"/>
-                    </FlagValueMapEntry>
-                    <FlagValueMapEntry>
                         <key>Optimization</key>
                         <value level="3" flag="-O" use="true"/>
                     </FlagValueMapEntry>

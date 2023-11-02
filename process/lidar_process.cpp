@@ -247,27 +247,40 @@ namespace lidar_perception
 #endif
 
     /*RtCloudPreprocess*/
+#if PRINT_PRO
     TIME_STAMP(RtCloudPreprocessstart);
+#endif
     auto points = std::move(RtCloudPreprocess(res, true));
     Voxel voxel = Voxel();
 
+#if PRINT_PRO
     TIME_STAMP(points_to_voxelsstart);
+#endif
     voxel.points_to_voxels(points, piv);
+
+#if PRINT_PRO
     TIME_STAMP(points_to_voxelsstop);
+#endif
 
     this->time_points_to_voxels = points_to_voxelsstop - points_to_voxelsstart;
 
     PointPillarsNet ppn;
-
+#if PRINT_PRO
     TIME_STAMP(extractstart);
+#endif
+
     vector<float> batch_image = ppn.extract(piv);
     vector<float> batch_image_input(batch_image);
+
+#if PRINT_PRO
     TIME_STAMP(extractstop);
     this->time_extract  = extractstop - extractstart;
-    
+#endif
+
     piv->Reset();
-    TIME_STAMP(RtCloudPreprocessstop);
+
 #if PRINT_PRO
+    TIME_STAMP(RtCloudPreprocessstop);
     this->time_RtCloudPreprocesss = RtCloudPreprocessstop - RtCloudPreprocessstart;
     printf("> processor_->Update >> points_to_voxels cycles = %llu \n",(this->time_points_to_voxels));
     printf("> processor_->Update >> voxel.time_extract cycles = %llu \n",(this->time_extract));
