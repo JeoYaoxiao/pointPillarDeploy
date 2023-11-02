@@ -213,7 +213,7 @@ namespace lidar_perception
 
  float _LOCAL_RAM0_  data_npy_data_input[16 * 352];
  signed char _LOCAL_RAM1_  data_npy_data_output[16 * 352];
-
+ float  _LOCAL_RAM0_ tmp_in[16];
 //  float _LOCAL_RAM0_ tmp_in[16];
 //  signed char _LOCAL_RAM1_ *tmp_out[16];
 
@@ -318,7 +318,7 @@ namespace lidar_perception
             float tmp = *(c * s1 + offset_l2_w) * 2.0;
             tmp = std::floor(tmp);
             tmp = MIN(MAX(tmp, -128), 127);
-            *(offset_l2_c + c) = (signed char)tmp;
+             *(offset_l2_c + c) = (signed char)tmp;
           }
         }
       }
@@ -378,45 +378,55 @@ namespace lidar_perception
 #else
 
       xb_vecN_2xf32 *p_in;
-      xb_vecNx8 *p_out;
-      float tmp_in[16];
-      for (int i = 0; i < 400; i++) { // 400
-        offset_l1_w = i * 352 + p_npy_data_temp_dsp;
-        offset_l1_c = p_npy_data_dsp + i *  5632;
+      // xb_vecNx8 *p_out;
+//      float tmp_in[16];
+      for (int i = 0; i < 400 /*input_h_*/; i++) { // 400 h
+        offset_l1_w = i * 352 /*input_w_*/ + p_npy_data_temp_dsp;
+        offset_l1_c = p_npy_data_dsp + i *  5632 /* s2 = input_w_ * input_c_*/;
 
-        for (int m = 0; m < 352; m++) { // w=352
+        for (int m = 0; m < 352 /*input_w_*/; m++) { // w=352
           offset_l2_w = offset_l1_w + m;
           offset_l2_c = m * 16 + offset_l1_c; // c=16
-#if 0
-           for (int idx = 0; idx < 10; idx++) { //
-             float tmp = *(idx * 400 * 352 + offset_l2_w) * 2.0;
-             tmp = std::floor(tmp);
-             tmp = MIN(MAX(std::floor(tmp), -128), 127);
-             *(offset_l2_c + idx) = (signed char)tmp;
-           }
-#else
+#if 1
           for (int idx = 0; idx < 10; idx++) {
-            // tmp_in[idx] = *(idx * s1 + offset_l2_w) * 2.0;
-            tmp_in[idx] = *(idx * 400 * 352 + offset_l2_w);
+            tmp_in[idx] = *(idx * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
           }
-          // for (int idx = 0; idx < pre_output_c_; idx++) {
-          //   float tmp = std::floor(tmp_in[idx]);
-          //   tmp = MIN(MAX(tmp, -128), 127);
-          //   // *(offset_l2_c + idx) = (signed char)tmp;
-          //   *tmp_out[idx] = (signed char)tmp;
-          //   //*(offset_l2_c + idx) = (signed char)tmp;
-          // }
+#else
+          //tmp[0] -temp[10]
+          tmp_in[0] = *(0 * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
+          tmp_in[1] = *(1 * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
+          tmp_in[2] = *(2 * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
+          tmp_in[3] = *(3 * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
+          tmp_in[4] = *(4 * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
+          tmp_in[5] = *(5 * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
+          tmp_in[6] = *(6 * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
+          tmp_in[7] = *(7 * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
+          tmp_in[8] = *(8 * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
+          tmp_in[9] = *(9 * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
+#endif
           p_in = (xb_vecN_2xf32 *)(tmp_in);
           IVP_MULN_2XF32T(*p_in, *p_in, 2, IVP_LTRSN_2(10));
           IVP_FIFLOORN_2XF32T(*p_in, *p_in, IVP_LTRSN_2(10));
           IVP_MAXN_2XF32T(*p_in, *p_in, -128, IVP_LTRSN_2(10));
           IVP_MINN_2XF32T(*p_in, *p_in, 127, IVP_LTRSN_2(10));
 
+#if 1
+
           for (int idx = 0; idx < pre_output_c_; idx++) {
             *(offset_l2_c + idx) = (signed char)tmp_in[idx];
           }
+#else
+          *(offset_l2_c ) = (signed char)tmp_in[0];
+          *(offset_l2_c + 1) = (signed char)tmp_in[1];
+          *(offset_l2_c + 2) = (signed char)tmp_in[2];
+          *(offset_l2_c + 3) = (signed char)tmp_in[3];
+          *(offset_l2_c + 4) = (signed char)tmp_in[4];
+          *(offset_l2_c + 5) = (signed char)tmp_in[5];
+          *(offset_l2_c + 6) = (signed char)tmp_in[6];
+          *(offset_l2_c + 7) = (signed char)tmp_in[7];
+          *(offset_l2_c + 8) = (signed char)tmp_in[8];
+          *(offset_l2_c + 9) = (signed char)tmp_in[9];
 #endif
-
         }
       }
 
