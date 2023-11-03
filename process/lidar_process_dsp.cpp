@@ -11,7 +11,7 @@
 #include <algorithm>
 
 #include "lidar_data_common.h"
-//#include "lidar_inference.h"
+#include "lidar_inference.h"
 #include "post_lidar_process.h"
 
 #include "base.h"
@@ -357,9 +357,9 @@ namespace lidar_perception
     // NCHW-->NHWC, CH:10-->16 padding
     {
       // 352 * 400   input_w_ = 352 input_h_ = 400
-      //      int s1 = input_h_ * input_w_; //140800
+      int s1 = input_h_ * input_w_; //140800
       // 400 * 16    pre_output_c_ = 10  input_c_ = 16
-      //      int s2 =  input_w_ * input_c_; // 5632
+      int s2 =  input_w_ * input_c_; // 5632
 
       float *offset_l1_w = 0;
       signed char *offset_l1_c = 0;
@@ -378,28 +378,28 @@ namespace lidar_perception
 #pragma omp parallel for
       for (int i = 0; i < 400 /*input_h_*/; i++) { // 400 h
         offset_l1_w = i * 352 /*input_w_*/ + p_npy_data_temp_dsp;
-        offset_l1_c = p_npy_data_dsp + i *  5632 /* s2 = input_w_ * input_c_*/;
+        offset_l1_c = p_npy_data_dsp + i * s2;
 
         for (int m = 0; m < 352 /*input_w_*/; m++) { // w=352
           offset_l2_w = offset_l1_w + m;
           offset_l2_c = m * 16 + offset_l1_c; // c=16
-
+#if 0
           for (int idx = 0; idx < 10; idx++) {
             tmp_in[idx] = *(idx * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
           }
-
+#else
 //          //tmp[0] -temp[10]
-//          tmp_in[0] = *(0 * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
-//          tmp_in[1] = *(1 * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
-//          tmp_in[2] = *(2 * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
-//          tmp_in[3] = *(3 * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
-//          tmp_in[4] = *(4 * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
-//          tmp_in[5] = *(5 * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
-//          tmp_in[6] = *(6 * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
-//          tmp_in[7] = *(7 * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
-//          tmp_in[8] = *(8 * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
-//          tmp_in[9] = *(9 * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
-
+          tmp_in[0] = *(0 * s1 + offset_l2_w);
+          tmp_in[1] = *(1 * s1 + offset_l2_w);
+          tmp_in[2] = *(2 * s1 + offset_l2_w);
+          tmp_in[3] = *(3 * s1 + offset_l2_w);
+          tmp_in[4] = *(4 * s1 + offset_l2_w);
+          tmp_in[5] = *(5 * s1 + offset_l2_w);
+          tmp_in[6] = *(6 * s1 + offset_l2_w);
+          tmp_in[7] = *(7 * s1 + offset_l2_w);
+          tmp_in[8] = *(8 * s1 + offset_l2_w);
+          tmp_in[9] = *(9 * s1 + offset_l2_w);
+#endif
           p_in = (xb_vecN_2xf32 *)(tmp_in);
           IVP_MULN_2XF32T(*p_in, *p_in, 2, IVP_LTRSN_2(10));
           IVP_FIFLOORN_2XF32T(*p_in, *p_in, IVP_LTRSN_2(10));
@@ -415,10 +415,10 @@ namespace lidar_perception
       TIME_STAMP(npy_dsp_stop);
       printf("> npy dsp cycles = %llu \n", npy_dsp_stop - npy_dsp_start);
     }
-#if 0
+
     printf(">>>output--> npy_data: DSP vs CPU>>>>>>>>>>>memcmp=%d\n",
            memcmp(p_npy_data_dsp, p_npy_data, 16 * 400 * 352));
-
+#if 0
     int sum = 0;
     for(int i = 0; i < 16 * 400 * 352; i++) {
       int cpu = (int)*(p_npy_data + i);
@@ -530,9 +530,11 @@ namespace lidar_perception
      }
    }
 
+#endif
 
    DataBuffer infer_img_tmp = {0};
-   infer_img_tmp.start = int_buf_.get();
+   //infer_img_tmp.start = int_buf_.get();
+   infer_img_tmp.start = p_npy_data;
    infer_img_tmp.length = 16 * 400 * 352;
 
    std::vector<int> keep_ids;
@@ -545,8 +547,34 @@ namespace lidar_perception
    dir_cls_argmax.reserve(16);
    std::vector<std::vector<float>> boxes;
    boxes.reserve(16);
-   lidar_inference_->Update(infer_img_tmp, nms_score_threshold, keep_ids, scores, cls_argmax, dir_cls_argmax, boxes);
 
+
+   for (int idx = 0; idx < 4; idx++ ) {
+	   std::vector<float> box_data;
+	   for (int i = 0; i < 16; i++ ) {
+		   box_data.push_back( i * 0.1f + 0.1);
+	   }
+	   boxes.push_back(box_data);
+   }
+
+   for (int j = 0; j < 32; j++) {
+     keep_ids.push_back(j);
+     cls_argmax.push_back(j);
+     dir_cls_argmax.push_back(j);
+     scores.push_back(j * 0.1);
+   }
+
+   std::cout << "infer_img_tmp length:" << infer_img_tmp.length << std::endl;
+   std::cout << "keep_ids.size:" << keep_ids.size() << std::endl;
+   std::cout << "scores.size:" << scores.size() << std::endl;
+   std::cout << "cls_argmax.size:" << cls_argmax.size()<< std::endl;
+   std::cout << "dir_cls_argmax.size:" << dir_cls_argmax.size() << std::endl;
+   std::cout << "boxes:" << boxes.size() << std::endl;
+#if 0
+   lidar_inference_->Update(infer_img_tmp, nms_score_threshold, keep_ids, scores, cls_argmax, dir_cls_argmax, boxes);
+#endif
+
+#if 0
    if (!boxes.size())
    {
      return;
