@@ -409,24 +409,25 @@ namespace lidar_perception
         }
 #else  // second loop
         int count = 0;
+
         for (int m = 0; m < 352 /*input_w_*/; m++) { // w=352
           offset_l2_w = offset_l1_w + m;
           offset_l2_c = m * 16 + offset_l1_c; // c=16
+
           for (int idx = 0; idx < 10; idx++) {
-             data_in[count] = *(idx * s1 + offset_l2_w);
-             data_out[count] = offset_l2_c + idx;
-             count++;
+               data_in[count] = *(idx * s1 + offset_l2_w);
+               data_out[count] = offset_l2_c + idx;
+               count++;
           }
-        }
+         }
 
         for (int i = 0 ; i < 352 * 10; i+=16) {
-          p_in = (xb_vecN_2xf32 *)(data_in);
+          p_in = (xb_vecN_2xf32 *)(data_in + i);
           *p_in = IVP_MULN_2XF32( *p_in, 2);
           *p_in = IVP_FIFLOORN_2XF32(*p_in);
           *p_in = IVP_MAXN_2XF32(*p_in, -128);
           *p_in = IVP_MINN_2XF32(*p_in, 127);
         }
-
 
        for (int i = 0 ; i< 352 * 10; i++) {
          *(data_out[i]) = (signed char)data_in[i];
