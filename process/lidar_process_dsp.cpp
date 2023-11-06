@@ -375,31 +375,27 @@ namespace lidar_perception
       xb_vecN_2xf32 *p_in;
       // xb_vecNx8 *p_out;
       float tmp_in[16];
+      signed char *tmp_out[16];
+
+//      signed char *tmp_out[16];
+
+      float data_in[352 * 10];
+      signed char * data_out[352 * 10]; //352 *10
 #pragma omp parallel for
       for (int i = 0; i < 400 /*input_h_*/; i++) { // 400 h
         offset_l1_w = i * 352 /*input_w_*/ + p_npy_data_temp_dsp;
         offset_l1_c = p_npy_data_dsp + i * s2;
 
+#if 0 //for the second loop
+
         for (int m = 0; m < 352 /*input_w_*/; m++) { // w=352
           offset_l2_w = offset_l1_w + m;
           offset_l2_c = m * 16 + offset_l1_c; // c=16
-#if 0
+
           for (int idx = 0; idx < 10; idx++) {
             tmp_in[idx] = *(idx * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
           }
-#else
-//          //tmp[0] -temp[10]
-          tmp_in[0] = *(0 * s1 + offset_l2_w);
-          tmp_in[1] = *(1 * s1 + offset_l2_w);
-          tmp_in[2] = *(2 * s1 + offset_l2_w);
-          tmp_in[3] = *(3 * s1 + offset_l2_w);
-          tmp_in[4] = *(4 * s1 + offset_l2_w);
-          tmp_in[5] = *(5 * s1 + offset_l2_w);
-          tmp_in[6] = *(6 * s1 + offset_l2_w);
-          tmp_in[7] = *(7 * s1 + offset_l2_w);
-          tmp_in[8] = *(8 * s1 + offset_l2_w);
-          tmp_in[9] = *(9 * s1 + offset_l2_w);
-#endif
+
           p_in = (xb_vecN_2xf32 *)(tmp_in);
           IVP_MULN_2XF32T(*p_in, *p_in, 2, IVP_LTRSN_2(10));
           IVP_FIFLOORN_2XF32T(*p_in, *p_in, IVP_LTRSN_2(10));
@@ -410,6 +406,38 @@ namespace lidar_perception
             *(offset_l2_c + idx) = (signed char)tmp_in[idx];
           }
         }
+#else  // second loop
+
+        for (int m = 0; m < 352 /*input_w_*/; m++) { // w=352
+          offset_l2_w = offset_l1_w + m;
+          offset_l2_c = m * 16 + offset_l1_c; // c=16
+          for (int idx = 0; idx < 10; idx++) {
+            data_in[m * 352 + idx] = *(idx * 400 * 352 + offset_l2_w);
+//            data_out[m * 352+ idx] = offset_l2_c + idx;
+          }
+        }
+
+        for (int i = 0 ; i < 352 * 10; i+=16) {
+          p_in = (xb_vecN_2xf32 *)(data_in);
+          *p_in = IVP_MULN_2XF32( *p_in, 2);
+          *p_in = IVP_FIFLOORN_2XF32(*p_in);
+          *p_in = IVP_MAXN_2XF32(*p_in, -128);
+          *p_in = IVP_MINN_2XF32(*p_in, 127);
+        }
+
+
+        for (int m = 0; m < 352 /*input_w_*/; m++) { // w=352
+          offset_l2_c = m * input_c_ + offset_l1_c;
+          for (int idx = 0; idx < 10; idx++) {
+            *(offset_l2_c + idx) = (signed char)data_in[m * 352 + idx];
+          }
+        }
+//        for (int idx = 0 ; idx < 352 * 10; idx++) {
+//          *(data_out[idx]) = (signed char)data_in[idx];
+//        }
+
+
+#endif // second loop
       }
 
       TIME_STAMP(npy_dsp_stop);
@@ -418,13 +446,15 @@ namespace lidar_perception
 
     printf(">>>output--> npy_data: DSP vs CPU>>>>>>>>>>>memcmp=%d\n",
            memcmp(p_npy_data_dsp, p_npy_data, 16 * 400 * 352));
-#if 0
+#if 1
     int sum = 0;
     for(int i = 0; i < 16 * 400 * 352; i++) {
       int cpu = (int)*(p_npy_data + i);
       int dsp = (int)*(p_npy_data_dsp + i);
-      if (cpu != dsp)
-    	 std::cout << " cpu: " << cpu << " dsp: " << dsp << endl;
+      if (cpu != dsp) {
+    	 std::cout << "idx==>" << i << " cpu: " << cpu << " dsp: " << dsp << endl;
+         break;
+      }
       if (cpu != 0)
     	  sum++;
     }
@@ -547,15 +577,6 @@ namespace lidar_perception
    dir_cls_argmax.reserve(16);
    std::vector<std::vector<float>> boxes;
    boxes.reserve(16);
-
-
-   for (int idx = 0; idx < 4; idx++ ) {
-	   std::vector<float> box_data;
-	   for (int i = 0; i < 16; i++ ) {
-		   box_data.push_back( i * 0.1f + 0.1);
-	   }
-	   boxes.push_back(box_data);
-   }
 
    for (int j = 0; j < 32; j++) {
      keep_ids.push_back(j);
