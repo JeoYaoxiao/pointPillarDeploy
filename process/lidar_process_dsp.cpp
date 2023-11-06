@@ -408,18 +408,15 @@ namespace lidar_perception
           }
         }
 #else  // second loop
-        int count = 0;
 
         for (int m = 0; m < 352 /*input_w_*/; m++) { // w=352
           offset_l2_w = offset_l1_w + m;
           offset_l2_c = m * 16 + offset_l1_c; // c=16
-
           for (int idx = 0; idx < 10; idx++) {
-               data_in[count] = *(idx * s1 + offset_l2_w);
-               data_out[count] = offset_l2_c + idx;
-               count++;
+            data_in[m * 10 + idx] = *(idx * s1 + offset_l2_w);
+            data_out[m * 10 + idx] = offset_l2_c + idx;
           }
-         }
+        }
 
         for (int i = 0 ; i < 352 * 10; i+=16) {
           p_in = (xb_vecN_2xf32 *)(data_in + i);
@@ -429,10 +426,18 @@ namespace lidar_perception
           *p_in = IVP_MINN_2XF32(*p_in, 127);
         }
 
+#if 1
        for (int i = 0 ; i< 352 * 10; i++) {
          *(data_out[i]) = (signed char)data_in[i];
        }
-
+#else
+       for (int m = 0; m < 352 /*input_w_*/; m++) { // w=352
+         offset_l2_c = m * 16 + offset_l1_c; // c=16
+         for (int idx = 0; idx < pre_output_c_; idx++) {
+           *(offset_l2_c + idx) = (signed char)data_in[m *10 + idx];
+         }
+       }
+#endif
 
 #endif // second loop
       }
@@ -443,7 +448,7 @@ namespace lidar_perception
 
     printf(">>>output--> npy_data: DSP vs CPU>>>>>>>>>>>memcmp=%d\n",
            memcmp(p_npy_data_dsp, p_npy_data, 16 * 400 * 352));
-#if 1
+#if 0
     int sum = 0;
     for(int i = 0; i < 16 * 400 * 352; i++) {
       int cpu = (int)*(p_npy_data + i);
@@ -561,8 +566,8 @@ namespace lidar_perception
 
    DataBuffer infer_img_tmp = {0};
    //infer_img_tmp.start = int_buf_.get();
-   infer_img_tmp.start = p_npy_data;
-   infer_img_tmp.length = 16 * 400 * 352;
+//   infer_img_tmp.start = p_npy_data;
+//   infer_img_tmp.length = 16 * 400 * 352;
 
    std::vector<int> keep_ids;
    keep_ids.reserve(16);
