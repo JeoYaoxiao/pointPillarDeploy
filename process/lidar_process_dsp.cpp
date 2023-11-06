@@ -374,13 +374,14 @@ namespace lidar_perception
       TIME_STAMP(npy_dsp_start);
       xb_vecN_2xf32 *p_in;
       // xb_vecNx8 *p_out;
-      float tmp_in[16];
-      signed char *tmp_out[16];
+     float tmp_in[10];
+//      signed char *tmp_out[10];
 
 //      signed char *tmp_out[16];
 
       float data_in[352 * 10];
       signed char * data_out[352 * 10]; //352 *10
+
 #pragma omp parallel for
       for (int i = 0; i < 400 /*input_h_*/; i++) { // 400 h
         offset_l1_w = i * 352 /*input_w_*/ + p_npy_data_temp_dsp;
@@ -393,7 +394,7 @@ namespace lidar_perception
           offset_l2_c = m * 16 + offset_l1_c; // c=16
 
           for (int idx = 0; idx < 10; idx++) {
-            tmp_in[idx] = *(idx * 400 * 352 /* s1 = input_h_ * input_w_*/+ offset_l2_w);
+            tmp_in[idx] = *(idx * s1 + offset_l2_w);
           }
 
           p_in = (xb_vecN_2xf32 *)(tmp_in);
@@ -407,13 +408,14 @@ namespace lidar_perception
           }
         }
 #else  // second loop
-
+        int count = 0;
         for (int m = 0; m < 352 /*input_w_*/; m++) { // w=352
           offset_l2_w = offset_l1_w + m;
           offset_l2_c = m * 16 + offset_l1_c; // c=16
           for (int idx = 0; idx < 10; idx++) {
-            data_in[m * 352 + idx] = *(idx * 400 * 352 + offset_l2_w);
-//            data_out[m * 352+ idx] = offset_l2_c + idx;
+             data_in[count] = *(idx * s1 + offset_l2_w);
+             data_out[count] = offset_l2_c + idx;
+             count++;
           }
         }
 
@@ -426,15 +428,9 @@ namespace lidar_perception
         }
 
 
-        for (int m = 0; m < 352 /*input_w_*/; m++) { // w=352
-          offset_l2_c = m * input_c_ + offset_l1_c;
-          for (int idx = 0; idx < 10; idx++) {
-            *(offset_l2_c + idx) = (signed char)data_in[m * 352 + idx];
-          }
-        }
-//        for (int idx = 0 ; idx < 352 * 10; idx++) {
-//          *(data_out[idx]) = (signed char)data_in[idx];
-//        }
+       for (int i = 0 ; i< 352 * 10; i++) {
+         *(data_out[i]) = (signed char)data_in[i];
+       }
 
 
 #endif // second loop
@@ -453,7 +449,7 @@ namespace lidar_perception
       int dsp = (int)*(p_npy_data_dsp + i);
       if (cpu != dsp) {
     	 std::cout << "idx==>" << i << " cpu: " << cpu << " dsp: " << dsp << endl;
-         break;
+//         break;
       }
       if (cpu != 0)
     	  sum++;
