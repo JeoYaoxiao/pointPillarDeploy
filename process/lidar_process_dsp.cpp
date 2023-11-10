@@ -221,11 +221,19 @@ namespace lidar_perception
   signed char _LOCAL_SRAM_  sa_npy_data_output[16 * 352 * 400];
 
   float _LOCAL_RAM0_  tmp_d_data[2 * 2 * 4];
+
+  float _LOCAL_RAM0_ data_in[352 * 10];
+  signed char  * _LOCAL_RAM0_ data_out[352 * 10]; //352 *10
+
   void LidarProcessDSP::Update(void *ptr, int size)
   {
     //timer
-	MAYBE_UNUSED(uint64_t npy_cpu_start = 0LL, npy_cpu_stop = 0LL);
-    MAYBE_UNUSED(uint64_t npy_dsp_start = 0LL, npy_dsp_stop = 0LL);
+	uint64_t npy_cpu_start = 0LL, npy_cpu_stop = 0LL;
+    uint64_t npy_dsp_start = 0LL, npy_dsp_stop = 0LL;
+    uint64_t getdata_start = 0LL, getdata_stop = 0LL;
+    uint64_t cal_start = 0LL, cal_stop = 0LL;
+    uint64_t set_start = 0LL, set_stop = 0LL;
+    uint64_t totaldata_time = 0LL, totalcal_time= 0LL, totalset_time= 0LL;
 #if PRINT_PRO
     MAYBE_UNUSED(uint64_t memcpystart = 0LL, memcpystop = 0LL);
     MAYBE_UNUSED(uint64_t RtCloudPreprocessstart = 0LL, RtCloudPreprocessstop = 0LL);
@@ -379,15 +387,15 @@ namespace lidar_perception
 
 //      signed char *tmp_out[16];
 
-      float data_in[352 * 10];
-      signed char * data_out[352 * 10]; //352 *10
+//      float data_in[352 * 10];
+//      signed char * data_out[352 * 10]; //352 *10
 
 #pragma omp parallel for
       for (int i = 0; i < 400 /*input_h_*/; i++) { // 400 h
         offset_l1_w = i * 352 /*input_w_*/ + p_npy_data_temp_dsp;
         offset_l1_c = p_npy_data_dsp + i * s2;
 
-#if 0 //for the second loop
+#if 0 //for the second loop optimaze the assignment.
 
         for (int m = 0; m < 352 /*input_w_*/; m++) { // w=352
           offset_l2_w = offset_l1_w + m;
@@ -407,17 +415,57 @@ namespace lidar_perception
             *(offset_l2_c + idx) = (signed char)tmp_in[idx];
           }
         }
-#else  // second loop
-
+#else  // //for the second loop optimaze the assignment.
+        xb_vecNx16 *m_offset;
+		TIME_STAMP(getdata_start);
         for (int m = 0; m < 352 /*input_w_*/; m++) { // w=352
           offset_l2_w = offset_l1_w + m;
           offset_l2_c = m * 16 + offset_l1_c; // c=16
+#if 1 // divide the loop and optimize it.
           for (int idx = 0; idx < 10; idx++) {
-            data_in[m * 10 + idx] = *(idx * s1 + offset_l2_w);
-            data_out[m * 10 + idx] = offset_l2_c + idx;
+        	int tmp_idx = m * 10 + idx;
+            data_in[tmp_idx] = *(idx * s1 + offset_l2_w);
+            data_out[tmp_idx] = offset_l2_c + idx;
           }
-        }
+#else  // divide the loop and optimize it.
 
+//          m_offset = (xb_vecNx16 *)(m);
+//          IVP_MULN_2XF32T(*m_offset, *m_offset, 2, IVP_LTRSN_2(10));
+
+          //IVP_MULN_2XF32T(*p_in, *p_in, 2, IVP_LTRSN_2(10));
+          for (int idx = 0; idx < 10; idx++) {
+            data_in[ m * 10 + idx] = *(idx * s1 + offset_l2_w);
+            /* data_out[tmp_idx] = offset_l2_c + idx; */
+          }
+
+#if 0  // convert the data output from array to point address.
+          for (int idx = 0; idx < 10; idx++) {
+            // int tmp_idx = m * 10 + idx;
+        	// data_out[tmp_idx] = offset_l2_c + idx;
+            *(data_out+m * 10 + idx) = offset_l2_c + idx;
+          }
+#else
+          //offset_l2_c + idx
+          xb_vec2Nx8 idxs =  IVP_SEQ2NX8();
+          xb_vec2Nx8 *offset = (xb_vec2Nx8*)(offset_l2_c);
+          xb_vec2Nx8 *p_m = (xb_vec2Nx8*)(m);
+          xb_vec2Nx8 ret_data, tmp_idxs;
+          xb_vec2Nx24 m10;
+          valign bout = IVP_ZALIGN();
+          IVP_ADD2NX8T(ret_data, *offset, idxs, IVP_LTRS2N(10));
+
+          xb_vec2Nx8 *retdst = (xb_vec2Nx8 *)(data_out + m * 10);
+          IVP_SAV2NX8_XP(ret_data, bout, retdst, 64);
+          IVP_SAPOS2NX8_FP(bout, retdst);
+#endif  // convert the data output from array to point address.
+
+
+#endif
+        }
+		TIME_STAMP(getdata_stop);
+		totaldata_time += getdata_stop - getdata_start;
+
+		TIME_STAMP(cal_start);
         for (int i = 0 ; i < 352 * 10; i+=16) {
           p_in = (xb_vecN_2xf32 *)(data_in + i);
           *p_in = IVP_MULN_2XF32( *p_in, 2);
@@ -425,11 +473,15 @@ namespace lidar_perception
           *p_in = IVP_MAXN_2XF32(*p_in, -128);
           *p_in = IVP_MINN_2XF32(*p_in, 127);
         }
-
+		TIME_STAMP(cal_stop);
+		totalcal_time += cal_stop - cal_start;
 #if 1
+		TIME_STAMP(set_start);
        for (int i = 0 ; i< 352 * 10; i++) {
          *(data_out[i]) = (signed char)data_in[i];
        }
+		TIME_STAMP(set_stop);
+		totalset_time += set_stop - set_start;
 #else
        for (int m = 0; m < 352 /*input_w_*/; m++) { // w=352
          offset_l2_c = m * 16 + offset_l1_c; // c=16
@@ -444,6 +496,9 @@ namespace lidar_perception
 
       TIME_STAMP(npy_dsp_stop);
       printf("> npy dsp cycles = %llu \n", npy_dsp_stop - npy_dsp_start);
+      printf("> data_time cycles = %llu  \n", totaldata_time);
+      printf("> cal_time cycles = %llu \n", totalcal_time);
+      printf("> totalset_time cycles = %llu \n", totalset_time);
     }
 
     printf(">>>output--> npy_data: DSP vs CPU>>>>>>>>>>>memcmp=%d\n",
