@@ -421,28 +421,18 @@ namespace lidar_perception
         for (int m = 0; m < 352 /*input_w_*/; m++) { // w=352
           offset_l2_w = offset_l1_w + m;
           offset_l2_c = m * 16 + offset_l1_c; // c=16
-#if 1 // divide the loop and optimize it.
-          for (int idx = 0; idx < 10; idx++) {
-        	int tmp_idx = m * 10 + idx;
-            data_in[tmp_idx] = *(idx * s1 + offset_l2_w);
-            data_out[tmp_idx] = offset_l2_c + idx;
-          }
-#else  // divide the loop and optimize it.
 
 //          m_offset = (xb_vecNx16 *)(m);
 //          IVP_MULN_2XF32T(*m_offset, *m_offset, 2, IVP_LTRSN_2(10));
-
           //IVP_MULN_2XF32T(*p_in, *p_in, 2, IVP_LTRSN_2(10));
           for (int idx = 0; idx < 10; idx++) {
             data_in[ m * 10 + idx] = *(idx * s1 + offset_l2_w);
-            /* data_out[tmp_idx] = offset_l2_c + idx; */
           }
 
-#if 0  // convert the data output from array to point address.
+#if 1  // convert the data output from array to point address.
           for (int idx = 0; idx < 10; idx++) {
-            // int tmp_idx = m * 10 + idx;
-        	// data_out[tmp_idx] = offset_l2_c + idx;
-            *(data_out+m * 10 + idx) = offset_l2_c + idx;
+             int tmp_idx = m * 10 + idx;
+        	 data_out[tmp_idx] = offset_l2_c + idx;
           }
 #else
           //offset_l2_c + idx
@@ -460,7 +450,6 @@ namespace lidar_perception
 #endif  // convert the data output from array to point address.
 
 
-#endif
         }
 		TIME_STAMP(getdata_stop);
 		totaldata_time += getdata_stop - getdata_start;
