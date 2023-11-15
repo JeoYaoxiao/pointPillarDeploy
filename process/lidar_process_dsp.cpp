@@ -9,6 +9,7 @@
 #include <thread>
 #include <memory>
 #include <algorithm>
+#include <xtensa/idma.h>
 
 #include "lidar_data_common.h"
 #include "lidar_inference.h"
@@ -25,6 +26,8 @@
 #  define MAX(a,b)  ((a) < (b) ? (b) : (a))
 #endif
 
+// Declare iDMA buffer in DataRAM
+IDMA_BUFFER_DEFINE(dmaBuffer, 32, IDMA_2D_DESC);
 namespace lidar_perception
 {
 #if 0
@@ -223,7 +226,10 @@ namespace lidar_perception
   float _LOCAL_RAM0_  tmp_d_data[2 * 2 * 4];
 
   float _LOCAL_RAM0_ data_in[352 * 10];
+
   signed char  * _LOCAL_RAM0_ data_out[352 * 10]; //352 *10
+
+  signed char  * _LOCAL_RAM0_ data_test[32]; //352 *10
 
   void LidarProcessDSP::Update(void *ptr, int size)
   {
@@ -234,6 +240,8 @@ namespace lidar_perception
     uint64_t cal_start = 0LL, cal_stop = 0LL;
     uint64_t set_start = 0LL, set_stop = 0LL;
     uint64_t totaldata_time = 0LL, totalcal_time= 0LL, totalset_time= 0LL;
+
+    memset(data_test, 0 , 16);
 #if PRINT_PRO
     MAYBE_UNUSED(uint64_t memcpystart = 0LL, memcpystop = 0LL);
     MAYBE_UNUSED(uint64_t RtCloudPreprocessstart = 0LL, RtCloudPreprocessstop = 0LL);
@@ -353,6 +361,8 @@ namespace lidar_perception
 
 #endif //quantification
 
+//    idma_init(0, MAX_BLOCK_16, 32, TICK_CYCLES_1, 0, NULL);
+//    idma_init_loop(dmaBuffer, IDMA_2D_DESC, 32, NULL, NULL);
 #if 1 //DSP
 // signed char *p_npy_data = int_buf_.get();
     float *p_npy_data_temp_dsp = &batch_image_dsp[0];
@@ -422,31 +432,49 @@ namespace lidar_perception
           offset_l2_w = offset_l1_w + m;
           offset_l2_c = m * 16 + offset_l1_c; // c=16
 
-//          m_offset = (xb_vecNx16 *)(m);
-//          IVP_MULN_2XF32T(*m_offset, *m_offset, 2, IVP_LTRSN_2(10));
-          //IVP_MULN_2XF32T(*p_in, *p_in, 2, IVP_LTRSN_2(10));
+
           for (int idx = 0; idx < 10; idx++) {
-            data_in[ m * 10 + idx] = *(idx * s1 + offset_l2_w);
+            //data_in[ m * 10 + idx] = *(idx * s1 + offset_l2_w);
+        	*(data_in + m * 10 + idx) = *(idx * s1 + offset_l2_w);
+          }
+//      	int32_t ret = idma_copy_desc(data_in + m * 10 + idx, idx * s1 + offset_l2_w, 10 * sizeof(float), 0);
+
+
+#if 0// convert the data output from array to point address.
+           for (int idx = 0; idx < 10; idx++) {
+            // int tmp_idx = m * 10 + idx;
+        	// data_out[tmp_idx] = offset_l2_c + idx;
+            *(data_out+ m * 10 + idx) = offset_l2_c + idx;
           }
 
-#if 1  // convert the data output from array to point address.
-          for (int idx = 0; idx < 10; idx++) {
-             int tmp_idx = m * 10 + idx;
-        	 data_out[tmp_idx] = offset_l2_c + idx;
-          }
 #else
-          //offset_l2_c + idx
-          xb_vec2Nx8 idxs =  IVP_SEQ2NX8();
-          xb_vec2Nx8 *offset = (xb_vec2Nx8*)(offset_l2_c);
-          xb_vec2Nx8 *p_m = (xb_vec2Nx8*)(m);
-          xb_vec2Nx8 ret_data, tmp_idxs;
-          xb_vec2Nx24 m10;
-          valign bout = IVP_ZALIGN();
-          IVP_ADD2NX8T(ret_data, *offset, idxs, IVP_LTRS2N(10));
+          xb_vecN_2x32v t_offset, t_data, t_cmp;
+          xb_vecN_2x32v *restrict p_data = (xb_vecN_2x32v *)(data_out+ m * 10);
+          valign vec_data = IVP_LAN_2X32_PP(p_data);
+          IVP_LAN_2X32_IP(t_data, vec_data, p_data);
 
-          xb_vec2Nx8 *retdst = (xb_vec2Nx8 *)(data_out + m * 10);
-          IVP_SAV2NX8_XP(ret_data, bout, retdst, 64);
-          IVP_SAPOS2NX8_FP(bout, retdst);
+          vboolN_2 count = IVP_LTRSN_2(10);
+          xb_vecN_2x32v seqt_16 = IVP_SEQN_2X32();
+          xb_vecN_2x32v address_data = IVP_MOVVA32((int)offset_l2_c);
+//          xb_vecN_2x32v p_off= IVP_LVN_2X32T_I((xb_vecN_2x32v*)(offset_l2_c), 0, count);
+
+#if 1     // version 1
+          IVP_ADDN_2X32T(t_cmp, address_data, seqt_16, count);//
+          valign bcmp = IVP_ZALIGN();
+          // 8bit ->32bit  so , the size should also expand to size * (32bit/8bit)
+          IVP_SAVN_2X32_XP(t_cmp, bcmp, p_data, 10*4);
+          IVP_SAPOSN_2X32_FP(bcmp, p_data);
+#endif
+
+
+#if 0     // version 2
+          IVP_ADDN_2X32T(*p_data, address_data, seqt_16, count);//
+          valign bcmp = IVP_ZALIGN();
+          // 8bit ->32bit  so , the size should also expand to size * (32bit/8bit)
+          IVP_SAVN_2X32_XP(t_data, bcmp, p_data, 10*4);
+          IVP_SAPOSN_2X32_FP(bcmp, p_data);
+#endif // verison 2
+
 #endif  // convert the data output from array to point address.
 
 
@@ -467,6 +495,8 @@ namespace lidar_perception
 #if 1
 		TIME_STAMP(set_start);
        for (int i = 0 ; i< 352 * 10; i++) {
+    	 printf("> data_out idx = %d  \n", i);
+
          *(data_out[i]) = (signed char)data_in[i];
        }
 		TIME_STAMP(set_stop);
