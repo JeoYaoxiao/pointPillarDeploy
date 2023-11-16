@@ -448,8 +448,10 @@ namespace lidar_perception
           }
 
 #else
+
+#if 1
           xb_vecN_2x32v t_offset, t_data, t_cmp;
-          xb_vecN_2x32v *restrict p_data = (xb_vecN_2x32v *)(data_out+ m * 10);
+          xb_vecN_2x32v *restrict p_data = (xb_vecN_2x32v *)(data_out+ m * 10 - 16);
           valign vec_data = IVP_LAN_2X32_PP(p_data);
           IVP_LAN_2X32_IP(t_data, vec_data, p_data);
 
@@ -457,23 +459,21 @@ namespace lidar_perception
           xb_vecN_2x32v seqt_16 = IVP_SEQN_2X32();
           xb_vecN_2x32v address_data = IVP_MOVVA32((int)offset_l2_c);
 //          xb_vecN_2x32v p_off= IVP_LVN_2X32T_I((xb_vecN_2x32v*)(offset_l2_c), 0, count);
+//          IVP_ADDN_2X32T(*p_data, address_data, seqt_16, count);
 
-#if 1     // version 1
           IVP_ADDN_2X32T(t_cmp, address_data, seqt_16, count);//
           valign bcmp = IVP_ZALIGN();
           // 8bit ->32bit  so , the size should also expand to size * (32bit/8bit)
-          IVP_SAVN_2X32_XP(t_cmp, bcmp, p_data, 10*4);
+
+          IVP_SAVN_2X32_XP(t_cmp, bcmp, p_data, 10 * 4);
           IVP_SAPOSN_2X32_FP(bcmp, p_data);
+//          int arr_out_idx[32] = {  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15,
+//				                  16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
+//
+//          xb_vecN_2x32Uv  vec_out_idx = IVP_LVN_2X32U_I((xb_vecN_2x32Uv *)arr_out_idx, 0);
+//          IVP_SCATTERN_2X32T(t_cmp, (int*)data_out, vec_out_idx, count);
 #endif
 
-
-#if 0     // version 2
-          IVP_ADDN_2X32T(*p_data, address_data, seqt_16, count);//
-          valign bcmp = IVP_ZALIGN();
-          // 8bit ->32bit  so , the size should also expand to size * (32bit/8bit)
-          IVP_SAVN_2X32_XP(t_data, bcmp, p_data, 10*4);
-          IVP_SAPOSN_2X32_FP(bcmp, p_data);
-#endif // verison 2
 
 #endif  // convert the data output from array to point address.
 
@@ -495,7 +495,7 @@ namespace lidar_perception
 #if 1
 		TIME_STAMP(set_start);
        for (int i = 0 ; i< 352 * 10; i++) {
-    	 printf("> data_out idx = %d  \n", i);
+//    	 printf("> data_out idx = %d  \n", i);
 
          *(data_out[i]) = (signed char)data_in[i];
        }

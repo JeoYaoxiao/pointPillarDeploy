@@ -305,8 +305,6 @@
                                     									
                                     <listOptionValue builtIn="false" value="__GXX_ABI_VERSION=1002"/>
                                     									
-                                    <listOptionValue builtIn="false" value="__GXX_EXPERIMENTAL_CXX0X__=1"/>
-                                    									
                                     <listOptionValue builtIn="false" value="__GXX_RTTI=1"/>
                                     									
                                     <listOptionValue builtIn="false" value="__GXX_WEAK__=1"/>
@@ -539,8 +537,6 @@
                                     									
                                     <listOptionValue builtIn="false" value="__STDC__=1"/>
                                     									
-                                    <listOptionValue builtIn="false" value="__STRICT_ANSI__=1"/>
-                                    									
                                     <listOptionValue builtIn="false" value="__UINT16_C_SUFFIX__"/>
                                     									
                                     <listOptionValue builtIn="false" value="__UINT16_FMTX__=&quot;hX&quot;"/>
@@ -765,53 +761,15 @@
                                     									
                                     <listOptionValue builtIn="false" value="__clang_version__=&quot;10.0.1"/>
                                     									
-                                    <listOptionValue builtIn="false" value="__cplusplus=201103L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_alias_templates=200704L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_attributes=200809L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_constexpr=200704"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_constexpr_in_decltype=201711L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_decltype=200707L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_delegating_constructors=200604L"/>
+                                    <listOptionValue builtIn="false" value="__cplusplus=199711L"/>
                                     									
                                     <listOptionValue builtIn="false" value="__cpp_exceptions=199711L"/>
                                     									
                                     <listOptionValue builtIn="false" value="__cpp_impl_destroying_delete=201806L"/>
                                     									
-                                    <listOptionValue builtIn="false" value="__cpp_inheriting_constructors=201511L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_initializer_lists=200806L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_lambdas=200907L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_nsdmi=200809L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_range_based_for=200907"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_raw_strings=200710L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_ref_qualifiers=200710L"/>
-                                    									
                                     <listOptionValue builtIn="false" value="__cpp_rtti=199711L"/>
                                     									
-                                    <listOptionValue builtIn="false" value="__cpp_rvalue_references=200610L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_static_assert=200410"/>
-                                    									
                                     <listOptionValue builtIn="false" value="__cpp_threadsafe_static_init=200806L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_unicode_characters=200704L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_unicode_literals=200710L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_user_defined_literals=200809L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_variadic_templates=200704L"/>
                                     									
                                     <listOptionValue builtIn="false" value="__llvm__=1"/>
                                     									
@@ -1097,8 +1055,6 @@
                                     									
                                     <listOptionValue builtIn="false" value="__GXX_ABI_VERSION=1002"/>
                                     									
-                                    <listOptionValue builtIn="false" value="__GXX_EXPERIMENTAL_CXX0X__=1"/>
-                                    									
                                     <listOptionValue builtIn="false" value="__GXX_RTTI=1"/>
                                     									
                                     <listOptionValue builtIn="false" value="__GXX_WEAK__=1"/>
@@ -1331,8 +1287,6 @@
                                     									
                                     <listOptionValue builtIn="false" value="__STDC__=1"/>
                                     									
-                                    <listOptionValue builtIn="false" value="__STRICT_ANSI__=1"/>
-                                    									
                                     <listOptionValue builtIn="false" value="__UINT16_C_SUFFIX__"/>
                                     									
                                     <listOptionValue builtIn="false" value="__UINT16_FMTX__=&quot;hX&quot;"/>
@@ -1557,53 +1511,15 @@
                                     									
                                     <listOptionValue builtIn="false" value="__clang_version__=&quot;10.0.1"/>
                                     									
-                                    <listOptionValue builtIn="false" value="__cplusplus=201103L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_alias_templates=200704L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_attributes=200809L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_constexpr=200704"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_constexpr_in_decltype=201711L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_decltype=200707L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_delegating_constructors=200604L"/>
+                                    <listOptionValue builtIn="false" value="__cplusplus=199711L"/>
                                     									
                                     <listOptionValue builtIn="false" value="__cpp_exceptions=199711L"/>
                                     									
                                     <listOptionValue builtIn="false" value="__cpp_impl_destroying_delete=201806L"/>
                                     									
-                                    <listOptionValue builtIn="false" value="__cpp_inheriting_constructors=201511L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_initializer_lists=200806L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_lambdas=200907L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_nsdmi=200809L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_range_based_for=200907"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_raw_strings=200710L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_ref_qualifiers=200710L"/>
-                                    									
                                     <listOptionValue builtIn="false" value="__cpp_rtti=199711L"/>
                                     									
-                                    <listOptionValue builtIn="false" value="__cpp_rvalue_references=200610L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_static_assert=200410"/>
-                                    									
                                     <listOptionValue builtIn="false" value="__cpp_threadsafe_static_init=200806L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_unicode_characters=200704L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_unicode_literals=200710L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_user_defined_literals=200809L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_variadic_templates=200704L"/>
                                     									
                                     <listOptionValue builtIn="false" value="__llvm__=1"/>
                                     									
@@ -1889,8 +1805,6 @@
                                     									
                                     <listOptionValue builtIn="false" value="__GXX_ABI_VERSION=1002"/>
                                     									
-                                    <listOptionValue builtIn="false" value="__GXX_EXPERIMENTAL_CXX0X__=1"/>
-                                    									
                                     <listOptionValue builtIn="false" value="__GXX_RTTI=1"/>
                                     									
                                     <listOptionValue builtIn="false" value="__GXX_WEAK__=1"/>
@@ -2123,8 +2037,6 @@
                                     									
                                     <listOptionValue builtIn="false" value="__STDC__=1"/>
                                     									
-                                    <listOptionValue builtIn="false" value="__STRICT_ANSI__=1"/>
-                                    									
                                     <listOptionValue builtIn="false" value="__UINT16_C_SUFFIX__"/>
                                     									
                                     <listOptionValue builtIn="false" value="__UINT16_FMTX__=&quot;hX&quot;"/>
@@ -2349,53 +2261,15 @@
                                     									
                                     <listOptionValue builtIn="false" value="__clang_version__=&quot;10.0.1"/>
                                     									
-                                    <listOptionValue builtIn="false" value="__cplusplus=201103L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_alias_templates=200704L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_attributes=200809L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_constexpr=200704"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_constexpr_in_decltype=201711L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_decltype=200707L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_delegating_constructors=200604L"/>
+                                    <listOptionValue builtIn="false" value="__cplusplus=199711L"/>
                                     									
                                     <listOptionValue builtIn="false" value="__cpp_exceptions=199711L"/>
                                     									
                                     <listOptionValue builtIn="false" value="__cpp_impl_destroying_delete=201806L"/>
                                     									
-                                    <listOptionValue builtIn="false" value="__cpp_inheriting_constructors=201511L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_initializer_lists=200806L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_lambdas=200907L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_nsdmi=200809L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_range_based_for=200907"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_raw_strings=200710L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_ref_qualifiers=200710L"/>
-                                    									
                                     <listOptionValue builtIn="false" value="__cpp_rtti=199711L"/>
                                     									
-                                    <listOptionValue builtIn="false" value="__cpp_rvalue_references=200610L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_static_assert=200410"/>
-                                    									
                                     <listOptionValue builtIn="false" value="__cpp_threadsafe_static_init=200806L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_unicode_characters=200704L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_unicode_literals=200710L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_user_defined_literals=200809L"/>
-                                    									
-                                    <listOptionValue builtIn="false" value="__cpp_variadic_templates=200704L"/>
                                     									
                                     <listOptionValue builtIn="false" value="__llvm__=1"/>
                                     									
