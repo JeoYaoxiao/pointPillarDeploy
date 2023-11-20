@@ -449,7 +449,7 @@ namespace lidar_perception
 
 #else
 
-#if 1
+#if 1     // output
           xb_vecN_2x32v t_offset, t_data, t_cmp;
           xb_vecN_2x32v *restrict p_data = (xb_vecN_2x32v *)(data_out+ m * 10 - 16);
           valign vec_data = IVP_LAN_2X32_PP(p_data);
@@ -457,11 +457,11 @@ namespace lidar_perception
 
           vboolN_2 count = IVP_LTRSN_2(10);
           xb_vecN_2x32v seqt_16 = IVP_SEQN_2X32();
-          xb_vecN_2x32v address_data = IVP_MOVVA32((int)offset_l2_c);
+          xb_vecN_2x32v address_off = IVP_MOVVA32((int)offset_l2_c);
 //          xb_vecN_2x32v p_off= IVP_LVN_2X32T_I((xb_vecN_2x32v*)(offset_l2_c), 0, count);
 //          IVP_ADDN_2X32T(*p_data, address_data, seqt_16, count);
 
-          IVP_ADDN_2X32T(t_cmp, address_data, seqt_16, count);//
+          IVP_ADDN_2X32T(t_cmp, address_off, seqt_16, count);//
           valign bcmp = IVP_ZALIGN();
           // 8bit ->32bit  so , the size should also expand to size * (32bit/8bit)
 
