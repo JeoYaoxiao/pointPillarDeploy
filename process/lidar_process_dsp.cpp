@@ -432,11 +432,79 @@ namespace lidar_perception
           offset_l2_w = offset_l1_w + m;
           offset_l2_c = m * 16 + offset_l1_c; // c=16
 
-
+#if 1
           for (int idx = 0; idx < 10; idx++) {
             //data_in[ m * 10 + idx] = *(idx * s1 + offset_l2_w);
-        	*(data_in + m * 10 + idx) = *(idx * s1 + offset_l2_w);
+        	*(data_in + m * 10 + idx) = *(idx * s1  + offset_l2_w);
+//             printf("> idx= %d , address = %d, value = %f \n", idx, idx * s1  + offset_l2_w, *(idx * s1  + offset_l2_w) );
           }
+//#else
+          // data in array
+#if 1
+          xb_vecN_2xf32 t_data_in, t_data_ret;
+          valign vec_data_in, vec_data_ret,  za_ret;
+          vboolN_2 num ;
+          xb_vecN_2x32v vec_idx, vec_mul, vec_s1, vec_offset;
+          xb_vecNx16 vec_seq;
+
+          xb_vecN_2xf32 *restrict p_data_in = (xb_vecN_2xf32 *)(data_in + m * 10);
+          vec_data_in = IVP_LAN_2XF32_PP(p_data_in);
+          IVP_LAN_2XF32_IP(t_data_in, vec_data_in, p_data_in);
+
+         // idx * s1  + offset_l2_w
+          num = IVP_LTRSN_2(10);
+
+          vec_seq = IVP_SEQNX16();//  xb_vecN_2x32v IVP_SEQN_2X32(void);
+		  vec_s1 = IVP_MOVVA32(s1);
+          vec_offset = IVP_MOVVA32((int)offset_l2_w);
+//          vec_mul = IVP_PACKVRN_2X64W(IVP_MULN_2X16X32_0(IVP_MOVNX16_FROMN_2X32(IVP_SEQN_2X32), vec_s1), 0);
+          vec_mul = IVP_PACKVRN_2X64W(IVP_MULN_2X16X32_0(vec_seq, vec_s1), 0);
+//          vec_mul = IVP_PACKVRN_2X64W(IVP_MULN_2X16X32_1(vec_seq, vec_s1), 0);
+//          vec_idx = IVP_ADDN_2X32(vec_offset, vec_mul);
+          IVP_ADDN_2X32T(vec_idx, vec_mul, vec_offset, num);
+  		  int arr_idx[16];
+  		// IVP_SVN_2X32_I(vec_idx, (xb_vecN_2x32v*)arr_idx, 0);
+  		  xb_vecN_2x32v *restrict p_arr_idx = (xb_vecN_2x32v *)(arr_idx);
+
+  		  za_ret = IVP_ZALIGN();
+
+  		  IVP_SAVN_2X32_XP(vec_idx, za_ret,p_arr_idx, 10 * 4);
+          IVP_SAPOSN_2X32_FP(za_ret, p_arr_idx);
+#else
+          xb_vecN_2xf32 t_data_in, t_data_ret;
+          valign vec_data_in, vec_data_ret, za_ret;
+          vboolN_2 num;
+          vboolN num_n;
+          xb_vecNx16 vec_idx, vec_mul, vec_s1, vec_offset;
+          xb_vecNx16 vec_seq;
+
+          xb_vecN_2xf32 *restrict p_data_in =
+              (xb_vecN_2xf32 *)(data_in + m * 10);
+          vec_data_in = IVP_LAN_2XF32_PP(p_data_in);
+          IVP_LAN_2XF32_IP(t_data_in, vec_data_in, p_data_in);
+
+          // idx * s1  + offset_l2_w
+          num = IVP_LTRSN_2(10);
+          num_n  = IVP_LTRSN(10);
+          vec_seq = IVP_SEQNX16(); //  xb_vecN_2x32v IVP_SEQN_2X32(void);
+          vec_s1 = IVP_MOVVA16(s1);
+          vec_offset = IVP_MOVVA16((int)offset_l2_w);
+          vec_mul = IVP_PACKMNX48(IVP_MULNX16(vec_seq, vec_s1));
+          //          vec_idx = IVP_ADDN_2X32(vec_offset, vec_mul);
+          IVP_ADDNX16T(vec_idx, vec_mul, vec_offset, num_n);
+          int arr_idx[16];
+          IVP_SVNX16_I(vec_idx, (xb_vecNx16 *)arr_idx, 0);
+#endif
+          za_ret = IVP_ZALIGN();
+          //xb_vecN_2xf32 cvt_idx_3x32v = xb_vecN_2x32v_rtor_xb_vecN_2xf32(vec_idx);
+          xb_vecN_2xf32 *restrict p_data_ret = (xb_vecN_2xf32 *)(arr_idx);
+//          vec_data_ret = IVP_LAN_2XF32_PP(p_data_ret);
+//          IVP_LAN_2XF32_IP(t_data_ret, vec_data_ret, p_data_ret);
+/*
+          IVP_SAVN_2XF32_XP(*p_data_ret, za_ret, p_data_in, 10 * 4);
+          IVP_SAPOSN_2XF32_FP(za_ret, p_data_in);
+*/
+#endif
 //      	int32_t ret = idma_copy_desc(data_in + m * 10 + idx, idx * s1 + offset_l2_w, 10 * sizeof(float), 0);
 
 
@@ -522,7 +590,7 @@ namespace lidar_perception
 
     printf(">>>output--> npy_data: DSP vs CPU>>>>>>>>>>>memcmp=%d\n",
            memcmp(p_npy_data_dsp, p_npy_data, 16 * 400 * 352));
-#if 0
+#if 1
     int sum = 0;
     for(int i = 0; i < 16 * 400 * 352; i++) {
       int cpu = (int)*(p_npy_data + i);

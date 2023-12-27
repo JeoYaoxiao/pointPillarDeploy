@@ -50,6 +50,14 @@
                         <value selected="true"/>
                     </BooleanMapEntry>
                 </BooleanMapOptions>
+                <StringListMapOptions>
+                    <StringListMapEntry>
+                        <key>Libraries</key>
+                        <value flag="-l" inheritance="prepend">
+                            <ListEntry>idma-xtos</ListEntry>
+                        </value>
+                    </StringListMapEntry>
+                </StringListMapOptions>
                 <LinkerSupport custom="false" key="-mlsp=" value="sim"/>
             </LinkerOptions>
         </BaseSettings>
